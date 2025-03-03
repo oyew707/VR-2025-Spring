@@ -25,6 +25,8 @@ export function InputEvents() {
 
    this.isPressed = hand => handInfo[hand].pressTime > 0;
 
+   this.isAltPressed = hand => handInfo[hand].altPressTime > 0;
+
    this.flip = state => isFlipped = state === undefined ? true : state;
 
    let isFlipped = false;

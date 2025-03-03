@@ -1,0 +1,11 @@
+Model Information:
+* title:	Black Swan (NHMW-Zoo1-VS 63420)
+* source:	https://sketchfab.com/3d-models/black-swan-nhmw-zoo1-vs-63420-c6259ae5a9d34d99b9fa337d90694fab
+* author:	Natural History Museum Vienna (https://sketchfab.com/NHMWien)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Black Swan (NHMW-Zoo1-VS 63420)" (https://sketchfab.com/3d-models/black-swan-nhmw-zoo1-vs-63420-c6259ae5a9d34d99b9fa337d90694fab) by Natural History Museum Vienna (https://sketchfab.com/NHMWien) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
