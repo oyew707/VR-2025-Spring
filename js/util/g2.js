@@ -67,7 +67,7 @@ export function G2(do_not_animate_flag=false, canvasWidth=512, canvasHeight) {
 
    this.update = () => {
       if (window.vr)
-         mouseZ = lcb.down || rcb.down;
+         mouseZ = (lcb && lcb.down) || (rcb && rcb.down);
       mouseState = ! mouseZPrev && mouseZ ? 'press' :
                    ! mouseZ && mouseZPrev ? 'release' : mouseZ ? 'drag' : 'move';
       mouseZPrev = mouseZ;
@@ -234,7 +234,7 @@ export function G2(do_not_animate_flag=false, canvasWidth=512, canvasHeight) {
          g2.setColor('black');
          g2.text(text, x, y, 'center');
          if (this == activeWidget) { // IF THIS IS THE ACTIVE WIDGET, THEN DRAW THE CURSOR.
-            let cx = x + .085 * size * (cursor - text.length/2);
+            let cx = x + .053 * size * (cursor - text.length/2);
             g2.fillRect(cx - .005 * size, y - h/2, .01 * size, h);
          }
          drawWidgetOutline(x,y,w,h, true);
@@ -450,7 +450,11 @@ export function G2(do_not_animate_flag=false, canvasWidth=512, canvasHeight) {
       for (let n = 0 ; n < lines.length ; n++, y -= dy) {
          context.lineWidth = _h / 6;
          context.fillText(lines[n],0,h2c(n*dy));
-         context.strokeText(lines[n],0,h2c(n*dy));
+	 context.save();
+	    context.strokeStyle = 'black';
+	    context.lineWidth = 1.5;
+            context.strokeText(lines[n],0,h2c(n*dy));
+	 context.restore();
       }
       context.restore();
    }

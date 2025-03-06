@@ -1,7 +1,7 @@
 export default () => {
    return {
       enableSceneReloading: true,
-      scenes: [ 
+      scenes: [
             { name: "example1"  , path: "./example1.js"  , public: false },
             { name: "example2"  , path: "./example2.js"  , public: false },
             { name: "example3"  , path: "./example3.js"  , public: false },
@@ -35,6 +35,10 @@ export default () => {
 
             { name: "wordcloud"     , path: "./wordcloud.js"     , public: true },
             { name: "wordcloud2"    , path: "./wordcloud2.js"    , public: true },
+            { name: "wordcloud3"    , path: "./wordcloud3.js"    , public: true },
+            { name: "wordcloud4"    , path: "./wordcloud4.js"    , public: true },
+            { name: "wordcloud5"    , path: "./wordcloud5.js"    , public: true },
       ]
    };
 }
+

@@ -4,36 +4,23 @@ import { matchCurves } from "../render/core/matchCurves.js";
 export const init = async model => {
 
    let g2A = new G2();
-   model.txtrSrc(3, g2A.getCanvas());
-   let objA = model.add('square').txtr(3);
-
    let g2B = new G2();
-   model.txtrSrc(4, g2B.getCanvas());
-   let objB = model.add('square').txtr(4);
-
    let g2C = new G2();
-   model.txtrSrc(5, g2C.getCanvas());
-   let objC = model.add('square').txtr(5);
-
    let g2D = new G2();
-   model.txtrSrc(6, g2D.getCanvas());
-   let objD = model.add('square').txtr(6);
-
    let g2E = new G2();
-   model.txtrSrc(7, g2E.getCanvas());
-   let objE = model.add('square').txtr(7);
+
+   let objA = model.add('square').setTxtr(g2A.getCanvas());
+   let objB = model.add('square').setTxtr(g2B.getCanvas());
+   let objC = model.add('square').setTxtr(g2C.getCanvas());
+   let objD = model.add('square').setTxtr(g2D.getCanvas());
+   let objE = model.add('square').setTxtr(g2E.getCanvas());
 
    model.animate(() => {
-      g2A.update();
-      objA.identity().move(-.4,1.7,0).scale(.15);
-      g2B.update();
-      objB.identity().move(0,1.7,0).scale(.15);
-      g2C.update();
-      objC.identity().move(-.4,1.3,0).scale(.15);
-      g2D.update();
-      objD.identity().move(0,1.3,0).scale(.15);
-      g2E.update();
-      objE.identity().move(.4,1.7,0).scale(.15);
+      g2A.update(); objA.identity().move(-.4,1.7,0).scale(.15);
+      g2B.update(); objB.identity().move(0,1.7,0).scale(.15);
+      g2C.update(); objC.identity().move(-.4,1.3,0).scale(.15);
+      g2D.update(); objD.identity().move(0,1.3,0).scale(.15);
+      g2E.update(); objE.identity().move(.4,1.7,0).scale(.15);
    });
 
    // ANIMATED DRAWING OF A WIGGLY LINE
@@ -127,7 +114,7 @@ export const init = async model => {
       for (let n = 0 ; n < 4 ; n++)
          values.push(.5 + .4 * Math.sin(n + 3 * model.time));
       this.barChart(-.25,-.25,.5,.5, values, ['frodo','merry','pippin','samwise'],
-                                             ['red','green','blue','magenta']);
+                                           ['red','green','blue','magenta']);
    }
 
    // CLOCK
@@ -150,5 +137,12 @@ export const init = async model => {
    g2E.value = [.5,.5];
    g2E.addWidget(objE, 'trackpad', 0,   0, '#ff8080', 'trackpad', value => g2E.value = value);
    g2E.addWidget(objE, 'textbox' , 0, -.7, '#ffffff', 'hello', value => {});
+/*
+   model.move(0,1.5,0).scale(.3).animate(() => {
+      obj2.identity().move(0,-.2,0).scale(.7,.7,.0001);
+      obj3.identity().move(-2,-.2,0).turnY( Math.sin(model.time)).scale(.7,.7,.0001);
+      obj4.identity().move(0,1.3,0).scale(.5,.5,.0001);
+      obj5.identity().move(-2,1.2,0).scale(.5,.5,.0001);
+   });
+*/
 }
-
