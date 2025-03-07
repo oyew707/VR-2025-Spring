@@ -4,7 +4,7 @@ import { lcb, rcb } from '../handle_scenes.js';
 import { forEach } from "../third-party/gl-matrix/src/gl-matrix/vec3.js";
 
 const N = 8000;
-const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
+const svc_url = `${window.location.protocol}//${window.location.hostname}:5000`;
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
@@ -56,6 +56,17 @@ async function getIrisData() {
     return result;
 }
 
+// Returns the mesh dataset in 3D space for visualization from SVC server
+async function getMeshData() {
+    const response = await fetch(`${svc_url}/get_mesh_data`, {
+        method: 'GET',
+        // mode: 'no-cors'
+    });
+    const result = await response.json();
+
+    return result;
+}
+
 // Resets the SVC model
 async function resetModel(params) {
     const response = await fetch(`${svc_url}/reset`, {
@@ -72,6 +83,9 @@ async function resetModel(params) {
 }
 
 function getColor(classLabel) {
+    if (classLabel  == null){
+        return [0.5, 0.5, 0.5, 0.2]; // grey
+    }
     let color = classLabel == 0 ? [1,0,0, 0.2] : (classLabel == 1 ? [0,1,0, 0.2] : [0,0,1, 0.2]); 
     return color;
 }
@@ -82,6 +96,10 @@ export const init = async model => {
     // Widget to control the SVC model
     let g2Params = new G2();
     let paramsObj = model.add('square').setTxtr(g2Params.getCanvas());
+
+    // Widgets to display extra information
+    let g2Info = new G2();
+    let infoObj = model.add('square').setTxtr(g2Info.getCanvas());
 
     // Add sliders for numerical parameters
     g2Params.addWidget(paramsObj, 'slider', -0.6, 0.8, '#80ffff', 'C', value => params.C = max(0, value * 10));
@@ -99,11 +117,11 @@ export const init = async model => {
 
     // Set the initial decision boundary
     await resetModel(params);
-    const initdata = await updateSVC(params);
-    let grid = initdata["decision_boundary"];
-    let accuracy = initdata["accuracy"];
-    let reachedMaxIter = initdata["reached_max_iter"];
-    let converged = initdata["converged"];
+    // const initdata = await updateSVC(params);
+    let grid = await getMeshData();
+    let accuracy = 0;
+    let reachedMaxIter = 0;
+    let converged = 0;
 
     console.log(grid);
     let diff = [];
@@ -136,8 +154,13 @@ export const init = async model => {
     }
 
     model.move(0,1.5,0).animate(() => {
+        // Display widgets
         g2Params.update();
-        paramsObj.identity().move(-0.5, 0, 1.5).scale(0.5);
+        paramsObj.identity().move(-0.5, 0, 0).scale(0.5);
+
+        // Display info
+        g2Info.update();
+        infoObj.identity().move(-1, 0, 0).scale(0.5);
 
         if (diff.length == 0) {
             // if there is no diff run the next few epochs
@@ -160,7 +183,7 @@ export const init = async model => {
         }
     });
 
-    g2Params.render = function() {
+    g2Info.render = function() {
         this.setColor('white');
         this.fillRect(-1,-1,2,2);
         
