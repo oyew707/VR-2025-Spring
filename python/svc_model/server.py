@@ -18,7 +18,7 @@ from threading import Lock
 app = Flask(__name__)
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://192.168.68.103:2024", "http://localhost:2024", "http://10.19.170.217:2024"],
+        "origins": ["http://192.168.68.103:2024", "http://localhost:2024", "http://10.19.170.217:2024", "http://10.19.152.41:2024"],
         "methods": ["GET", "POST", "PUT", "OPTIONS"],  # Explicit methods
         "allow_headers": ["Content-Type"]  # Required for JSON requests
     }
@@ -96,4 +96,4 @@ def reset_req():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=True, port=3000)

@@ -4,7 +4,7 @@ import { lcb, rcb } from '../handle_scenes.js';
 import { forEach } from "../third-party/gl-matrix/src/gl-matrix/vec3.js";
 
 const N = 8000;
-const svc_url = `${window.location.protocol}//${window.location.hostname}:5000`;
+const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
