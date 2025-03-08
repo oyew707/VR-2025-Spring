@@ -95,7 +95,8 @@ export const init = async model => {                                            
          data[n].c = select ? [1,.5,.5] : [1,1,1];                               // ray, tint that tile pink and    //
          data[n].s = [ wordatlas[4*n + 2] / 1844 * (select ? 1.2 : .75) ,        // display it in a larger size.    //
                                        37 / 1844 * (select ? 1.2 : .75) ];       //                                 //
-      }                                                                          //                                 //
+         datta[n].c
+                                    }                                                                          //                                 //
                                                                                  // All the tiles are in one mesh   //
       particles.setParticles(data);                                              // for rendering, requiring only   //
                                                                                  // a single draw call.             //
