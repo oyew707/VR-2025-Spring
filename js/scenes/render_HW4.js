@@ -1,19 +1,18 @@
-const fs = require('fs');
-const cg = require("../render/core/cg.js");
-const { G2 } = require("../util/g2.js");
-const { lcb, rcb } = require("../handle_scenes.js");
-const { buttonState } = require("../render/core/controllerInput.js");
+// import cg from "../render/core/cg.js";
+// import { G2 } from "../util/g2.js";
+// import { lcb, rcb } from "../handle_scenes.js";
+// import { buttonState } from "../render/core/controllerInput.js";
 
 // 🎯 **Load Predictions**
-function loadPredictions() {
-    const data = fs.readFileSync("predictions.json");
+async function loadPredictions() {
+    const data = await fetch('./predictions.json').then(response => response.text());
     return JSON.parse(data);
 }
 
 // 🎯 **VR Rendering Setup**
-module.exports.init = async model => {
+export const init = async model => {
     let points = [];
-    let sceneFrames = loadPredictions();
+    let sceneFrames = await loadPredictions();
     let frameIndex = 0;
 
     // 🎯 **Spawn Spheres in a 10×10×10 Cube**
@@ -34,6 +33,7 @@ module.exports.init = async model => {
 
     // 🎯 **Animate Scene Frame-by-Frame**
     model.animate(() => {
+        console.log('in animate');
         if (sceneFrames.length === 0) return;
 
         let frameData = sceneFrames[frameIndex];
