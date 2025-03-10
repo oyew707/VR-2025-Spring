@@ -5,6 +5,7 @@ import { getIrisData, svc_url, getColor, resetModel } from "../util/svc_util.js"
 
 const N = 8000;
 
+const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
@@ -62,6 +63,17 @@ export const init = async model => {
     let g2Params = new G2();
     let paramsObj = model.add('square').setTxtr(g2Params.getCanvas());
 
+
+    // Add sliders for numerical parameters
+    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.8, '#80ffff', 'C', value => params.C = max(0, value * 10));
+    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.6, '#80ffff', 'Tolerance', value => params.tol = value / 100);
+    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.4, '#80ffff', 'Max Iter', value => params.max_iter = Math.round(value * 100));
+
+    // Add buttons for categorical parameters
+    g2Params.addWidget(paramsObj, 'button', -0.6, 0.2, '#ff8080', 'Linear Kernel', () => params.kernel = 'linear');
+    g2Params.addWidget(paramsObj, 'button', 0.0, 0.2, '#ff8080', 'Poly Kernel', () => params.kernel = 'poly');
+    g2Params.addWidget(paramsObj, 'button', 0.6, 0.2, '#ff8080', 'RBF Kernel', () => params.kernel = 'rbf');
+
     paramsObj.maxIter = 5;
     paramsObj.C = 1.0;
     paramsObj.tol = 0.001;
@@ -80,17 +92,17 @@ export const init = async model => {
     let g2Info = new G2();
     let infoObj = model.add('square').setTxtr(g2Info.getCanvas());
 
-
     model.txtrSrc(2, 'media/textures/disk.jpg');
     let particles = model.add('particles').info(N).txtr(2).flag('uTransparentTexture').scale(2);
 
     // Set the initial decision boundary
     await resetModel(params);
-    // const initdata = await updateSVC(params);
-    let grid = await getMeshData();
-    let accuracy = 0;
-    let reachedMaxIter = false;
-    let converged = false;
+
+    const initdata = await updateSVC(params);
+    let grid = initdata["decision_boundary"];
+    let accuracy = initdata["accuracy"];
+    let reachedMaxIter = initdata["reached_max_iter"];
+    let converged = initdata["converged"];
 
     let diff = [];
 
@@ -120,6 +132,7 @@ export const init = async model => {
                         .move(...position);
         iris.push(datapoint); 
     }
+
 
     model.move(0,0.5,-1.5).animate(() => {
         // Display widgets
@@ -158,6 +171,7 @@ export const init = async model => {
         }
     });
 
+
     g2Info.render = function() {
         let info = `Accuracy: ${accuracy.toFixed(3)}\nConverged: ${converged ? "Yes" : "No"}\nMax Iter Reached: ${reachedMaxIter ? "Yes" : "No"}`;
         let param_info = `Regularization Param(C): ${paramsObj.C.toFixed(3)}\nTolerance: ${paramsObj.tol.toFixed(3)}\nMax Iter: ${paramsObj.maxIter}\nKernel: ${paramsObj.kernel}\nDegree: ${paramsObj.degree}`;
@@ -191,6 +205,7 @@ export const init = async model => {
     g2Params.addWidget(paramsObj, 'slider', -0.6, -0.2, '#80ffff', 'C', (value) => {
         console.log("C", value);
         paramsObj.C = Math.max(0, value * 10);
+
     });
     g2Params.addWidget(paramsObj, 'slider', -0.6, -0.4, '#80ffff', 'Tol', (value) => {
         console.log("Tolerance", value);
