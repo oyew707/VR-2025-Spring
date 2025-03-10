@@ -19,11 +19,15 @@ export const init = async model => {
     function spawnSpheres(initialPositions) {
         points = initialPositions.map(([x, y, z, label]) => {
             let sphere = model.add('sphere');
-            sphere.position = [x, y, z];
+            sphere.position = [x/10, y/10, z/10];
             sphere.color(labelToColor(label));
             return sphere;
         });
     }
+
+    // 🎯 **Spawn Initial Spheres**
+    spawnSpheres(sceneFrames[0]);
+    console.log('points:', points.length);
 
     // 🎯 **Color Mapping for Labels**
     function labelToColor(label) {
@@ -32,20 +36,21 @@ export const init = async model => {
     }
 
     // 🎯 **Animate Scene Frame-by-Frame**
-    model.animate(() => {
-        console.log('in animate');
+    model.move(0,0.5,-1).animate(() => {
         if (sceneFrames.length === 0) return;
 
         let frameData = sceneFrames[frameIndex];
+        console.log('frameData:', frameData.length, 'points:', points.length, 'frameIndex:', frameIndex);
 
         frameData.forEach(([x, y, z, label], i) => {
+
             let sphere = points[i];
-            sphere.identity().move(x, y, z).scale(0.1);
+            let color = labelToColor(label);
+            sphere.identity().move(x/10, y/10, z/10).color(color).scale(0.01);
         });
 
         frameIndex = (frameIndex + 1) % sceneFrames.length;
     });
 
-    // 🎯 **Spawn Initial Spheres**
-    spawnSpheres(sceneFrames[0]);
+
 };
