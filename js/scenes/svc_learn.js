@@ -1,10 +1,10 @@
 import * as cg from "../render/core/cg.js";
 import { G2 } from "../util/g2.js";
 import { lcb, rcb } from '../handle_scenes.js';
-import { forEach } from "../third-party/gl-matrix/src/gl-matrix/vec3.js";
+import { getIrisData, svc_url, getColor, resetModel } from "../util/svc_util.js";
 
 const N = 8000;
-const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
+
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
@@ -45,17 +45,6 @@ async function updateSVC(params) {
     
 }
 
-// Returns the iris dataset in 3D space for visualization from SVC server
-async function getIrisData() {
-    const response = await fetch(`${svc_url}/get_iris_data`, {
-        method: 'GET',
-        // mode: 'no-cors'
-    });
-    const result = await response.json();
-
-    return result;
-}
-
 // Returns the mesh dataset in 3D space for visualization from SVC server
 async function getMeshData() {
     const response = await fetch(`${svc_url}/get_mesh_data`, {
@@ -65,29 +54,6 @@ async function getMeshData() {
     const result = await response.json();
 
     return result;
-}
-
-// Resets the SVC model
-async function resetModel(params) {
-    const response = await fetch(`${svc_url}/reset`, {
-        method: 'POST',
-        // mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(params)
-    });
-    const result = await response.json();
-
-    return result;
-}
-
-function getColor(classLabel) {
-    if (classLabel  == null){
-        return [0.5, 0.5, 0.5, 0.2]; // grey
-    }
-    let color = classLabel == 0 ? [1,0,0, 0.2] : (classLabel == 1 ? [0,1,0, 0.2] : [0,0,1, 0.2]); 
-    return color;
 }
 
 export const init = async model => {
@@ -224,7 +190,7 @@ export const init = async model => {
     // Add sliders for numerical parameters
     g2Params.addWidget(paramsObj, 'slider', -0.6, -0.2, '#80ffff', 'C', (value) => {
         console.log("C", value);
-        paramsObj.C = max(0, value * 10);
+        paramsObj.C = Math.max(0, value * 10);
     });
     g2Params.addWidget(paramsObj, 'slider', -0.6, -0.4, '#80ffff', 'Tol', (value) => {
         console.log("Tolerance", value);

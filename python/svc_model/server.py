@@ -9,9 +9,10 @@ __updated__ = "3/2/25"
 """
 
 # Imports
+import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from model import get_iris_data, train_svc, reset, get_mesh_decision
+from model import get_iris_data, train_svc, reset, get_mesh_decision, svc_predict
 from threading import Lock
 
 # Constants
@@ -93,6 +94,33 @@ def reset_req():
     params = request.json
     reset(**params)
     return jsonify({})
+
+@app.route('/predict', methods=['POST', 'OPTIONS'])
+@cross_origin()
+def predict_req():
+    """
+    -------------------------------------------------------
+    Predicts the target value for a given set of features.
+    -------------------------------------------------------
+    Returns:
+       result - The predicted target value (JSON)
+    -------------------------------------------------------
+    """
+    params = request.json
+    x = params.get('x')
+    y = params.get('y')
+    z = params.get('z')
+
+    if x is None or y is None or z is None:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    # Convert to df (as we trained with df)
+    df = pd.DataFrame([[x, y, z]], columns=['x', 'y', 'z'])
+
+    # Predict the target value
+    prediction = int(svc_predict(df)[0])
+    print(f"Prediction: {prediction}")
+    return jsonify({"prediction": prediction})
 
 
 if __name__ == '__main__':
