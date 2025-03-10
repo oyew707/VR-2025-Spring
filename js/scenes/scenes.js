@@ -39,7 +39,8 @@ export default () => {
             { name: "wordcloud4"    , path: "./wordcloud4.js"    , public: true },
             { name: "wordcloud5"    , path: "./wordcloud5.js"    , public: true },
 
-            { name: "svc"           , path: "./svc.js"           , public: true },
+            { name: "svc_learn"     , path: "./svc_learn.js"     , public: true },
+            { name: "svc_predict"   , path: "./svc_predict.js"   , public: true },
       ]
    };
 }

@@ -4,7 +4,7 @@ import { lcb, rcb } from '../handle_scenes.js';
 import { forEach } from "../third-party/gl-matrix/src/gl-matrix/vec3.js";
 
 const N = 8000;
-const svc_url = `${window.location.protocol}//${window.location.hostname}:5000`;
+const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
@@ -91,25 +91,28 @@ function getColor(classLabel) {
 }
 
 export const init = async model => {
-    let params = { 'max_iter': 5, 'C': 1.0, 'tol': 0.001, 'kernel': 'linear', 'degree': 3 };
 
     // Widget to control the SVC model
     let g2Params = new G2();
     let paramsObj = model.add('square').setTxtr(g2Params.getCanvas());
 
+    paramsObj.maxIter = 5;
+    paramsObj.C = 1.0;
+    paramsObj.tol = 0.001;
+    paramsObj.kernel = 'linear';
+    paramsObj.degree = 3;
+
+    let params = {
+        'C': paramsObj.C,
+        'tol': paramsObj.tol,
+        'max_iter': paramsObj.maxIter,
+        'kernel': paramsObj.kernel,
+        'degree': paramsObj.degree
+    };
+
     // Widgets to display extra information
     let g2Info = new G2();
     let infoObj = model.add('square').setTxtr(g2Info.getCanvas());
-
-    // Add sliders for numerical parameters
-    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.8, '#80ffff', 'C', value => params.C = max(0, value * 10));
-    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.6, '#80ffff', 'Tolerance', value => params.tol = value / 100);
-    g2Params.addWidget(paramsObj, 'slider', -0.6, 0.4, '#80ffff', 'Max Iter', value => params.max_iter = Math.round(value * 100));
-
-    // Add buttons for categorical parameters
-    g2Params.addWidget(paramsObj, 'button', -0.6, 0.2, '#ff8080', 'Linear Kernel', () => params.kernel = 'linear');
-    g2Params.addWidget(paramsObj, 'button', 0.0, 0.2, '#ff8080', 'Poly Kernel', () => params.kernel = 'poly');
-    g2Params.addWidget(paramsObj, 'button', 0.6, 0.2, '#ff8080', 'RBF Kernel', () => params.kernel = 'rbf');
 
 
     model.txtrSrc(2, 'media/textures/disk.jpg');
@@ -120,10 +123,9 @@ export const init = async model => {
     // const initdata = await updateSVC(params);
     let grid = await getMeshData();
     let accuracy = 0;
-    let reachedMaxIter = 0;
-    let converged = 0;
+    let reachedMaxIter = false;
+    let converged = false;
 
-    console.log(grid);
     let diff = [];
 
     let data = new Array(grid.length);
@@ -153,17 +155,24 @@ export const init = async model => {
         iris.push(datapoint); 
     }
 
-    model.move(0,1.5,0).animate(() => {
+    model.move(0,0.5,-1.5).animate(() => {
         // Display widgets
         g2Params.update();
-        paramsObj.identity().move(-0.5, 0, 0).scale(0.5);
+        paramsObj.identity().move(-0.5, 0.5, 1.0).scale(0.15);
 
         // Display info
         g2Info.update();
-        infoObj.identity().move(-1, 0, 0).scale(0.5);
+        infoObj.identity().move(-1., 0.5, 1.0).scale(0.15);
 
         if (diff.length == 0) {
             // if there is no diff run the next few epochs
+            params = {
+                'C': paramsObj.C,
+                'tol': paramsObj.tol,
+                'max_iter': paramsObj.maxIter,
+                'kernel': paramsObj.kernel,
+                'degree': paramsObj.degree
+            };
             updateSVC(params).then((result) => {
                 // console.log("Animate results", JSON.stringify(result));
                 console.log("Params", JSON.stringify(params), "Result", result["accuracy"].toString());
@@ -184,15 +193,56 @@ export const init = async model => {
     });
 
     g2Info.render = function() {
+        let info = `Accuracy: ${accuracy.toFixed(3)}\nConverged: ${converged ? "Yes" : "No"}\nMax Iter Reached: ${reachedMaxIter ? "Yes" : "No"}`;
+        let param_info = `Regularization Param(C): ${paramsObj.C.toFixed(3)}\nTolerance: ${paramsObj.tol.toFixed(3)}\nMax Iter: ${paramsObj.maxIter}\nKernel: ${paramsObj.kernel}\nDegree: ${paramsObj.degree}`;
+        info += "\n" + param_info;
         this.setColor('white');
         this.fillRect(-1,-1,2,2);
         
         // Display accuracy and status
         this.setColor('black');
         this.textHeight(0.05);
-        this.text(`Accuracy: ${accuracy.toFixed(3)}`, 0, 0.8, 'center');
-        this.text(`Converged: ${converged ? "Yes" : "No"}`, 0, 0.7, 'center');
-        this.text(`Max Iter Reached: ${reachedMaxIter ? "Yes" : "No"}`, 0, 0.6, 'center');
+        this.text(info, 0, 0, 'center');
+
     };
+
+    g2Params.render = function() {
+        // Set background
+        this.setColor('white');
+        this.fillRect(-1, -1, 2, 2);
+     
+        // Display title
+        this.setColor('black');
+        this.textHeight(0.05);
+        this.text('SVC Parameters', 0, 0.9, 'center');
+     
+        // Ensure widgets are rendered properly
+        this.setColor('black');
+     };
+     
+
+    // Add sliders for numerical parameters
+    g2Params.addWidget(paramsObj, 'slider', -0.6, -0.2, '#80ffff', 'C', (value) => {
+        console.log("C", value);
+        paramsObj.C = max(0, value * 10);
+    });
+    g2Params.addWidget(paramsObj, 'slider', -0.6, -0.4, '#80ffff', 'Tol', (value) => {
+        console.log("Tolerance", value);
+        paramsObj.tol = value / 100;
+    });
+    g2Params.addWidget(paramsObj, 'slider', -0.6, -0.6, '#80ffff', 'Max Iter', (value) => {
+        console.log("Max Iter", value);
+        paramsObj.maxIter = Math.round(value * 10);
+    });
+
+    g2Params.addWidget(paramsObj, 'slider', -0.6, -0.8, '#80ffff', 'Degree', (value) => {
+        console.log("Degree (when poly)", value);
+        paramsObj.degree = Math.round(value * 10);
+    });
+
+    // Add buttons for categorical parameters
+    g2Params.addWidget(paramsObj, 'button', -0.4, 0.4, '#ff8080', 'Linear Kernel', () => paramsObj.kernel = 'linear');
+    g2Params.addWidget(paramsObj, 'button', 0.0, 0.2, '#ff8080', 'Poly Kernel', () => paramsObj.kernel = 'poly');
+    g2Params.addWidget(paramsObj, 'button', 0.4, -0.0, '#ff8080', 'RBF Kernel', () => paramsObj.kernel = 'rbf');
 
 }
