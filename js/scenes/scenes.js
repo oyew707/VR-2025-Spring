@@ -45,8 +45,9 @@ export default () => {
             { name: "wordcloud6"    , path: "./wordcloud6.js"    , public: true },
             { name: "wordcloud7"    , path: "./wordcloud7.js"    , public: true },
 
-            { name: "svc_learn"     , path: "./svc_learn.js"     , public: true },
-            { name: "svc_predict"   , path: "./svc_predict.js"   , public: true },
+            { name: "svc"           , path: "./svc.js"              , public: true },
+            { name: "HW4-2"         , path: "./render_HW4_try.js"   , public: true },
+            // { name: "svc"           , path: "./svc.js"           , public: true },
       ]
    };
 }
