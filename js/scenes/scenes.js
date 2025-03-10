@@ -46,7 +46,7 @@ export default () => {
             { name: "wordcloud7"    , path: "./wordcloud7.js"    , public: true },
 
             { name: "svc"           , path: "./svc.js"              , public: true },
-            { name: "HW4-2"         , path: "./render_HW4_try.js"   , public: true },
+            { name: "HW4-2"         , path: "./render_HW4.js"   , public: true },
             // { name: "svc"           , path: "./svc.js"           , public: true },
       ]
    };
