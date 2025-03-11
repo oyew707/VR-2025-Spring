@@ -41,7 +41,7 @@ export const init = async model => {
         // }
         for (let n = 0 ; n < N; n++) {                                            //                                 //
             let select = L.index == n || R.index == n;                              // While a tile is at a controller //
-            random_data[n].s = select ? 0.1 : .0s1;                                         // Make it bigger       //         
+            random_data[n].s = select ? 0.1 : .0;                                         // Make it bigger       //         
         }
 
         particles.setParticles(random_data);
