@@ -52,7 +52,9 @@ export const init = async model => {                                            
    let Y = [];                                                                   //                                 //
                                                                                  //                                 //
    let particles = model.add('particles').info(N).setTxtr(canvas);               // Create a custom particles mesh. //
-                                                                                 //                                 //
+
+   //model.add('square').move(0,1.6,.5).scale(.45).setTxtr(canvas);
+
    let data = [];                                                                //                                 //
    for (let n = 0 ; n < N ; n++) {                                               // The wordatlas database contains //
       let u  = wordatlas[4*n + 1] / 1844;                                        // the position and scale of each  //
@@ -73,6 +75,7 @@ export const init = async model => {                                            
    }                                                                             //                                 //
                                                                                  //                                 //
    model.animate(() => {                                                         //                                 //
+
       if (speech != lastSpeech) {                                                // Whenever the content of speech  //
          message({ speech: speech.trim() });                                     // changes, send the new speech    //
          lastSpeech = speech;                                                    // text to the first client.       //

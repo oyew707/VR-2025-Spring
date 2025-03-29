@@ -162,3 +162,16 @@ def reset(C: float = None, kernel: str = None, degree: int = None, gamma: str = 
     params = {k: v for k, v in params.items() if v is not None}
     svc_model = SVC(probability=True, **params)
     data, Z_grid = get_iris_data(), get_mesh_decision()
+
+def svc_predict(X):
+    """
+    -------------------------------------------------------
+    Predicts the target for the given data using the SVC model.
+    -------------------------------------------------------
+    Parameters:
+        X - The data to predict (iterable)
+    Returns:
+        The predicted target (iterable)
+    -------------------------------------------------------
+    """
+    return svc_model.predict(X)

@@ -1,16 +1,16 @@
 import { Diagram } from "../render/core/diagram.js";
 
 export const init = async model => {
-   let diagram = new Diagram(model, 0,1, [0,1.6,0], .3, draw => {
+   let diagram = new Diagram(model, [0,1.6,0], .3, draw => {
       draw.save();
          draw.move(0,.05,0);
          draw.scale(.06);
-         draw.text({ color: '#ff2020', text: 'My\nanimated\ndiagram\n' });
+         draw.text({ color: '#ff2020', text: 'Animated\ndiagram\n' });
       draw.restore();
 
       draw.save();
          draw.scale(.4);
-         draw.cube({ color: 'white', lineWidth: .001 });
+         draw.cube({ color: 'white', lineWidth: .003 });
       draw.restore();
 
       draw.save();
