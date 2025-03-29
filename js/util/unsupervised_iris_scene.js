@@ -154,7 +154,7 @@ async function main() {
         // 🎯 **Apply Final Rounding Before Saving**
         const finalScenes = roundScenes(scaledScenes);
         
-        fs.writeFileSync(`/Users/alonflorentin/vr-stein/VR-2025-Spring/js/scenes/${filenames[i]}`, JSON.stringify(finalScenes, null, 2));
+        fs.writeFileSync(filenames[i], JSON.stringify(finalScenes, null, 2));
 
         console.log(`Final Min-Max Scaled Predictions saved to ${filenames[i]}`);
     }

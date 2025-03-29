@@ -1,3 +1,8 @@
+/* run `node js/util/unsupervised_iris_scene.js` 
+ modify the loadPredictions function to determine which
+ predictions to load
+ */
+
 // import cg from "../render/core/cg.js";
 // import { G2 } from "../util/g2.js";
 // import { lcb, rcb } from "../handle_scenes.js";
