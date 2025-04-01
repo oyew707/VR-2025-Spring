@@ -1,0 +1,4 @@
+tictactoe_gym
+torch
+stable-baselines3>=1.8.0
+gym[atari,accept-rom-license]

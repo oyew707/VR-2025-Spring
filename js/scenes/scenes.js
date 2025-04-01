@@ -45,9 +45,10 @@ export default () => {
             { name: "wordcloud6"    , path: "./wordcloud6.js"    , public: true },
             { name: "wordcloud7"    , path: "./wordcloud7.js"    , public: true },
 
-            { name: "svc"           , path: "./svc.js"              , public: true },
-            { name: "HW4-2"         , path: "./render_HW4.js"   , public: true },
-            // { name: "svc"           , path: "./svc.js"           , public: true },
+            { name: "svc_learn"           , path: "./svc_learn.js"              , public: true },
+            { name: "svc_predict"           , path: "./svc_predict.js"              , public: true },
+            { name: "latent_data"         , path: "./unsupervised_iris.js"   , public: true },
+            { name: "tictactoe"           , path: "./tictactoe.js"           , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
       ]
    };
 }

@@ -4,7 +4,6 @@ import { lcb, rcb } from '../handle_scenes.js';
 import { getIrisData, svc_url, getColor, resetModel } from "../util/svc_util.js";
 
 const N = 8000;
-const svc_url = `${window.location.protocol}//${window.location.hostname}:3000`;
 let isProcessing = false;
 
 // Trains the SVC model with the POST parameters.
