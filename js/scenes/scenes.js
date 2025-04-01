@@ -24,27 +24,24 @@ export default () => {
             { name: "clock"          , path: "./clock.js"          , public: false },
             { name: "particleNoise"  , path: "./particleNoise.js"  , public: false },
 
-            { name: "hud"           , path: "./hud.js"           , public: false },
-            { name: "g2Example1"    , path: "./g2Example1.js"    , public: false },
-            { name: "intersect2"    , path: "./intersect2.js"    , public: false },
-            { name: "large_texture" , path: "./large_texture.js" , public: false },
-            { name: "combineMeshes" , path: "./combineMeshes.js" , public: false },
-            { name: "widgets"       , path: "./widgets.js"       , public: false },
-            { name: "statue"        , path: "./statue.js"        , public: false },
-            { name: "severalGLTF"   , path: "./severalGLTF.js"   , public: false },
+            { name: "hud"            , path: "./hud.js"           , public: false },
+            { name: "g2Example1"     , path: "./g2Example1.js"    , public: false },
+            { name: "intersect2"     , path: "./intersect2.js"    , public: false },
+            { name: "large_texture"  , path: "./large_texture.js" , public: false },
+            { name: "combineMeshes"  , path: "./combineMeshes.js" , public: false },
+            { name: "widgets"        , path: "./widgets.js"       , public: false },
+            { name: "statue"         , path: "./statue.js"        , public: false },
+            { name: "severalGLTF"    , path: "./severalGLTF.js"   , public: false },
 
-            { name: "wordcloud"     , path: "./wordcloud.js"     , public: false },
-            { name: "wordcloud2"    , path: "./wordcloud2.js"    , public: false },
-            { name: "wordcloud3"    , path: "./wordcloud3.js"    , public: false },
-            { name: "wordcloud4"    , path: "./wordcloud4.js"    , public: false },
-            { name: "wordcloud5"    , path: "./wordcloud5.js"    , public: false },
-            { name: "wordcloud6"    , path: "./wordcloud6.js"    , public: false },
-            { name: "wordcloud7"    , path: "./wordcloud7.js"    , public: false },
+            { name: "wordcloud7"     , path: "./wordcloud7.js"    , public: true  },
+            { name: "stock"          , path: "./stock.js"         , public: true  },
+            { name: "aiQuery-console", path: "./aiQueryConsole.js", public: true  },
+            { name: "aiQuery"        , path: "./aiQuery.js"       , public: true  },
+            { name: "cities"         , path: "./cities.js"        , public: true  },
+            { name: "tale"           , path: "./tale.js"          , public: true  },
+            { name: "art"            , path: "./art.js"           , public: true  },
 
-            { name: "screen"         , path: "./screen.js"            , public: true },
-            { name: "stock"          , path: "./stock.js"             , public: true },
-            { name: "aiQuery-console", path: "./demoAIQueryConsole.js", public: true },
-            { name: "aiQuery"        , path: "./demoAIQuery.js"       , public: true },
+
       ]
    };
 }
