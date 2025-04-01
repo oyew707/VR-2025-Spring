@@ -45,8 +45,12 @@ function checkWin(cubes){
 }
 
 async function getActionValue() {
-    tictactoestate = server.synchronize('tictactoestate'); // Synchronize game state
+    // tictactoestate = server.synchronize('tictactoestate'); // Synchronize game state
     let params = { 'state': tictactoestate.cubes.map(cube => cube.owner * tictactoestate.currentPlayer) };
+    if (params.state.filter(x => x == 0).length == tictactoestate.values.filter(x => x == 1).length) {
+        console.log('No action value needed');
+        return;
+    }
     const response = await fetch(`${agent_url}/get_state_values`, {
         method: 'POST',
         // mode: 'no-cors',
@@ -151,7 +155,8 @@ export const init = async model => {
             tictactoestate.player2 = clientID;
             if (clients.length >= 2) {
                 tictactoestate.player2 = clients[1]; // Second client becom
-            } 
+            }
+            getActionValue(); // Get action values from the agent 
             server.broadcastGlobal('tictactoestate');
         }
         
@@ -169,13 +174,13 @@ export const init = async model => {
             let leftHit = lcb.hitRect(cube.getGlobalMatrix());
             let rightHit = rcb.hitRect(cube.getGlobalMatrix());
             let isHit = leftHit || rightHit;
+            let canPlay = (tictactoestate.currentPlayer == 1 && clientID == tictactoestate.player1) || (tictactoestate.currentPlayer == -1 && clientID == tictactoestate.player2);
 
             let cubeState = tictactoestate.cubes[index];
             if (isHit) {
                 let leftPressed = inputEvents.isPressed('left');
                 let rightPressed = inputEvents.isPressed('right');
                 let isPressed = leftPressed || rightPressed;
-                let canPlay = (tictactoestate.currentPlayer == 1 && clientID == tictactoestate.player1) || (tictactoestate.currentPlayer == -1 && clientID == tictactoestate.player2);
 
                 if (((leftHit && leftPressed) || (rightHit && rightPressed)) && Boolean(cubeState['owner'] == 0) && canPlay) {
                     console.log('Cube info:', cubeState, 'Pressed:', isPressed, 'Can play:', canPlay, 'index: ', index);
@@ -187,7 +192,6 @@ export const init = async model => {
                     tictactoestate.cubes[index]['color'] = newColor;
                     tictactoestate.currentPlayer = tictactoestate.currentPlayer === 1 ? -1 : 1; // Switch player
                     checkWin(tictactoestate.cubes);
-                    getActionValue(); // Get action values from the agent
 
 
                     cube.identity()
@@ -203,7 +207,7 @@ export const init = async model => {
                         .move(cubeState['position']) // Increased size on hover
                         .scale(cubeSize * 1.2)
                         .color(...cubeState['color']) // Default color
-                        .opacity(tictactoestate.values[index]);
+                        .opacity(canPlay ? tictactoestate.values[index]: 1);
                 }
 
             } else {
@@ -211,7 +215,7 @@ export const init = async model => {
                     .move(cubeState['position']) // Position in grid
                     .scale(cubeSize)
                     .color(...cubeState['color']) // Default color
-                    .opacity(tictactoestate.values[index]);  // Set opacity based on action value
+                    .opacity(canPlay ? tictactoestate.values[index]: 1);  // Set opacity based on action value
             }
         });
         objA.hud().scale(.6);
