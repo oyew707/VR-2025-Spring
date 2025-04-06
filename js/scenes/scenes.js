@@ -41,6 +41,9 @@ export default () => {
             { name: "tale"           , path: "./tale.js"          , public: true  },
             { name: "art"            , path: "./art.js"           , public: true  },
 
+            { name: "pinch"          , path: "./pinch.js"         , public: true  },
+            { name: "pinch2"         , path: "./pinch2.js"        , public: true  },
+
 
       ]
    };

@@ -6,23 +6,26 @@ import { buttonState, controllerMatrix } from "../render/core/controllerInput.js
 let pz = .75;
 
 let Projected = function() {
-   let em, mp, mi, ex, ey, ez, mm;
-   this.getMatrix = () => mm;
-   this.getScale = p => .5 * pz / (pz - (mi[2]*p[0] + mi[6]*p[1] + mi[10]*p[2] + mi[14]));
+   let em, mf, ex, ey, ez, a,b,c, d,e,f, g,h,i, j,k,l, B, C;
+   this.getMatrix = () => mf;
+   this.getScale = p => .5 * pz / (pz - (c*p[0] + f*p[1] + i*p[2] + l));
    this.projectPoint = p => {
-      let X = ex-p[0], Y = ey-p[1], Z = ez-p[2];
-      let z = -(mi[2]*ex + mi[6]*ey + mi[10]*ez + mi[14]) / (mi[2]*X + mi[6]*Y + mi[10]*Z);
-      return z > 0 ? null : [z*(mi[0]*X+mi[4]*Y+mi[8]*Z), mi[1]*(z*X+ex)+mi[5]*(z*Y+ey)+mi[9]*(z*Z+ez)+mi[13], -z];
+      let X = p[0] - ex, Y = p[1] - ey, Z = p[2] - ez;
+      let z = -C / (c*X + f*Y + i*Z);
+      return z < 0 ? null : [z * (a*X + d*Y + g*Z), z * (b*X + e*Y + h*Z) + B, z];
    }
    this.update = view => {
       em = cg.mMultiply(clay.inverseRootMatrix, clay.root().inverseViewMatrix(view));
+      this.tilt = Math.atan2(em[1], Math.sqrt(em[0]*em[0]+em[2]*em[2]));
       ex = em[12];
       ey = em[13];
       ez = em[14];
-      mp = cg.mMultiply(clay.root().inverseViewMatrix(view), cg.mTranslate([0,-.22,-pz]));
-      mi = cg.mInverse(mp);
-      mm = cg.mMultiply(clay.inverseRootMatrix, mp);
-      this.tilt = Math.atan2(mm[1], Math.sqrt(mm[0]*mm[0]+mm[2]*mm[2]));
+      mf = cg.mMultiply(em, cg.mTranslate([0,-.22,-pz]));
+      let m = cg.mInverse(mf);
+      a=m[0],b=m[1],c=m[2], d=m[4],e=m[5],f=m[6],g=m[8],h=m[9],i=m[10],j=m[12],k=m[13],l=m[14];
+      this.tilt = Math.atan2(d, Math.sqrt(a*a + g*g));
+      B = b * ex + e * ey + h * ez + k;
+      C = c * ex + f * ey + i * ez + l;
    }
 }
 
@@ -40,7 +43,8 @@ export let G3 = function(model, callback) {
        lineWidth = .01,
        nd = 0,
        screen = [],
-       textHeight = .1;
+       textHeight = .1,
+       view;
 
    for (let view = 0 ; view <= 1 ; view++) {
       g2[view] = new G2(false, 2040);
@@ -203,14 +207,16 @@ export let G3 = function(model, callback) {
    }
    this.textHeight = th => { textHeight = th; return this; }
 
-   let F = {left:[], right:[]};
-   let P = {left:[], right:[]};
+   let co = ['#0080f0','#ffffff','#ff0000','#ffff00','#008000'];
+   let F = {left:[0,0,0,0,0], right:[0,0,0,0,0]};
+   let P = {left:[0,0,0,0], right:[0,0,0,0]};
 
    this.finger = (hand,i) => F[hand][cg.def(i,1)];
    this.pinch  = (hand,i) => P[hand][cg.def(i,1)];
+   this.view   = ()       => view;
 
    this.update = () => {
-      for (let view = 0 ; view <= 1 ; view++) {
+      for (view = 0 ; view <= 1 ; view++) {
          projected.update(view);
          screen[view].setMatrix(projected.getMatrix());
 
@@ -221,16 +227,18 @@ export let G3 = function(model, callback) {
 
 	 for (let hand in {left:0,right:0})
 	    if (window.handtracking) {
-	       let co = ['#0080f0','#ffffff','#ff0000','#ffff00','#008000'];
 	       let fw = [.021,.019,.018,.017,.015];
 	       let f = F[hand];
 	       let p = P[hand];
 	       for (let i = 0 ; i < 5 ; i++) {
-	          f[i] = jointMatrix[hand][5*i + 4].mat.slice(12,15);
+		  let _f = jointMatrix[hand][5*i + 4].mat.slice(12,15);
+		  f[i] = f[i] ? cg.mix(f[i], _f, .5) : _f;
 	          this.lineWidth(fw[i]+.002).color('black').line(f[i], f[i]);
                }
-	       for (let i = 1 ; i < 5 ; i++)
-	          p[i] = cg.distance(f[0],f[i]) < .023;
+	       for (let i = 1 ; i < 5 ; i++) {
+	          let d = cg.distance(f[0],f[i]);
+	          p[i] = d > 0 && d < .023;
+               }
 	       this.lineWidth(fw[0]).color(co[p[1]?1:p[2]?2:p[3]?3:p[4]?4:0]).line(f[0], f[0]); // SHOW THUMB
 	       for (let i = 1 ; i < 5 ; i++)
 	          this.lineWidth(fw[i]).color(p[i] ? co[i] : co[0]).line(f[i], f[i]); // SHOW FINGER
@@ -238,8 +246,10 @@ export let G3 = function(model, callback) {
             else {
 	       F[hand][0] = F[hand][1] = cg.mMultiply(controllerMatrix[hand], cg.mTranslate(0,-.049,-.079)).slice(12,15);
 	       P[hand][1] = buttonState[hand][0].pressed;
-	       //this.lineWidth(.021).color('#000000').line(F[hand][1], F[hand][1]);
-	       //this.lineWidth(.019).color(P[hand][1] ? '#ffffff' : '#0080ff').line(F[hand][1], F[hand][1]);
+	       if (buttonState[hand][1])
+	          P[hand][2] = buttonState[hand][1].pressed;
+	       this.lineWidth(.021).color('#000000').line(F[hand][1], F[hand][1]);
+	       this.lineWidth(.019).color(co[ P[hand][1] ? 1 : P[hand][2] ? 2 : 0 ]).line(F[hand][1], F[hand][1]);
 	    }
 
 	 let sortedDisplayList = [];
