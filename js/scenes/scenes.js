@@ -43,6 +43,7 @@ export default () => {
 
             { name: "pinch"          , path: "./pinch.js"         , public: true  },
             { name: "pinch2"         , path: "./pinch2.js"        , public: true  },
+            { name: "pinch3"         , path: "./pinch3.js"        , public: true  },
 
 
       ]
