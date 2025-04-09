@@ -45,6 +45,12 @@ export default () => {
             { name: "svc_predict"           , path: "./svc_predict.js"              , public: true },
             { name: "latent_data"         , path: "./unsupervised_iris.js"   , public: true },
             { name: "tictactoe"           , path: "./tictactoe.js"           , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
+            { name: "towerOfHanoi" , path: "./towerOfHanoi.js" , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
+            { name: "pinch"          , path: "./pinch.js"         , public: true  },
+            { name: "pinch2"         , path: "./pinch2.js"        , public: true  },
+            { name: "pinch3"         , path: "./pinch3.js"        , public: true  },
+
+            { name: "red_ball"       , path: "./red_ball.js"      , public: true  },
       ]
    };
 }
