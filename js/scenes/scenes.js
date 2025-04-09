@@ -45,6 +45,7 @@ export default () => {
             { name: "svc_predict"           , path: "./svc_predict.js"              , public: true },
             { name: "latent_data"         , path: "./unsupervised_iris.js"   , public: true },
             { name: "tictactoe"           , path: "./tictactoe.js"           , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
+            { name: "towerOfHanoi" , path: "./towerOfHanoi.js" , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
       ]
    };
 }
