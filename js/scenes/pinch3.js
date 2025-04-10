@@ -7,11 +7,11 @@ import { G3 } from "../util/g3.js";
 //    Each user can manipulate only those tiles whose labels they can currently see.
 
 let words = 'Alice,Albert,Brenda,Ben,Cathy,Carl,Debra,Dennis,Ellen,Edgar,Fiona,Fred,Ginny,Glen'.split(',');
-let pink = '#ff8080', blue = '#00c0ff', myGender, yShare = 1.0;
+let pink = '#ff8080', blue = '#00c0ff', myGender, yShare = 1.5;
 
 let p = [];                                       // DEFAULT TILE POSITIONS
 for (let n = 0 ; n < words.length ; n++)
-   p.push([.21 * (n>>1) - .63, .9, .4 * (n&1) - .2]);
+   p.push([.21 * (n>>1) - .63, yShare - .1, .4 * (n&1) - .2]);
 
 server.init('p3S', { p: p, id: 0 });              // PERSISTENT STATE OBJECT
 server.init('p3I', {});                           // MESSAGE PASSING OBJECT
