@@ -10,8 +10,8 @@ class Stack {
             throw new Error("Element must be an object with a 'value' property.");
         }
 
-        if (this.stack.length < this.maxSize || this.stack.length === 0 || 
-            this.stack[this.stack.length - 1].value > element.value) 
+        if (this.stack.length < this.maxSize && (this.stack.length === 0 || 
+            this.peek().value > element.value)) 
         {
             this.stack.push(element);
             return true;
