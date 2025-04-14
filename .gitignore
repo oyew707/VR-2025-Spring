@@ -5,3 +5,12 @@ node_modules
 *.json
 key.key
 cert.cer
+*.idea/*
+*/.idea
+python/toh/.idea/misc.xml
+python/toh/.idea/modules.xml
+python/toh/.idea/toh.iml
+python/toh/.idea/vcs.xml
+python/toh/.idea/workspace.xml
+python/toh/.idea/inspectionProfiles/profiles_settings.xml
+python/toh/.idea/inspectionProfiles/Project_Default.xml

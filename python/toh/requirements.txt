@@ -1,0 +1,4 @@
+selenium>=4.31.0
+pillow>=11.1.0
+webdriver-manager>=3.8.5
+-e gymnasium_envs/
