@@ -51,6 +51,7 @@ export default () => {
             { name: "pinch3"         , path: "./pinch3.js"        , public: true  },
 
             { name: "red_ball"       , path: "./red_ball.js"      , public: true  },
+            { name: "shooter"        , path: "./shooter2.js"       , public: true  },
       ]
    };
 }
