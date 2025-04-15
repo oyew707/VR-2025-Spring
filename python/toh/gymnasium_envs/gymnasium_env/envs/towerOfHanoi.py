@@ -1,10 +1,9 @@
 """
 -------------------------------------------------------
-[Program Description]
+Virtual Reality Tower of Hanoi Environment
 -------------------------------------------------------
 Author:  einsteinoyewole
-ID:      [your ID]
-Email:   [your email address]
+Email:   eo2233@nyu.edu
 __updated__ = "4/14/25"
 -------------------------------------------------------
 """

@@ -1,6 +1,6 @@
 """
 -------------------------------------------------------
-[Program Description]
+Functions to set up and control a WebXR environment
 -------------------------------------------------------
 Author:  einsteinoyewole
 Email:   eo223@nyu.edu
