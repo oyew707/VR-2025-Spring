@@ -1,5 +1,5 @@
 import * as cg from "../render/core/cg.js";
-import { G2} from "./g2.js";
+import { G2 } from "./g2.js";
 import { jointMatrix } from "../render/core/handtrackingInput.js";
 import { buttonState, controllerMatrix } from "../render/core/controllerInput.js";
 
@@ -35,11 +35,14 @@ export let G3 = function(model, callback) {
    const DRAW = 0, FILL = 1, IMAGE = 2, LINE = 3, TEXT = 4;
 
    let color = '#000000',
+       displayList = [],
        distance = z => 0.4 / z,
        draw = this,
-       displayList = [],
        font = 'Helvetica',
        g2 = [],
+       handD = 0,
+       handP = [0,0,0],
+       handY = {left:undefined,right:undefined},
        lineWidth = .01,
        nd = 0,
        screen = [],
@@ -207,6 +210,11 @@ export let G3 = function(model, callback) {
    }
    this.textHeight = th => { textHeight = th; return this; }
 
+   this.textWidth = text => {
+      g2[0].textHeight(textHeight);
+      return g2[0].getCanvas().context.measureText(text).width / 2040;
+   }
+
    let co = ['#0080f0','#ffffff','#ff0000','#ffff00','#008000'];
    let F = {left:[0,0,0,0,0], right:[0,0,0,0,0]};
    let P = {left:[0,0,0,0], right:[0,0,0,0]};
@@ -214,6 +222,8 @@ export let G3 = function(model, callback) {
    this.finger = (hand,i) => F[hand][cg.def(i,1)];
    this.pinch  = (hand,i) => P[hand][cg.def(i,1)];
    this.view   = ()       => view;
+
+   let isPurple = false, purple = '#ff00ff';
 
    this.update = () => {
       for (view = 0 ; view <= 1 ; view++) {
@@ -225,23 +235,25 @@ export let G3 = function(model, callback) {
 
 	 // IF HAND TRACKING, SHOW TIPS OF FINGERS. USE COLOR TO INDICATE PINCH.
 
+	 let isTouching = (a,b) => { let d = cg.distance(a,b); return d > 0 && d < .025; }
+
 	 for (let hand in {left:0,right:0})
 	    if (window.handtracking) {
 	       let fw = [.021,.019,.018,.017,.015];
 	       let f = F[hand];
 	       let p = P[hand];
 	       for (let i = 0 ; i < 5 ; i++) {
-  		  let _f = cg.mMultiply(clay.inverseRootMatrix, jointMatrix[hand][5*i + 4].mat).slice(12,15);
+  		  let _f = cg.mTransform(cg.mMultiply(clay.inverseRootMatrix,
+		                                      cg.mMultiply(cg.mTranslate(handP),
+		                                                   jointMatrix[hand][5*i + 4].mat)), [0,.0,-.01]);
 		  f[i] = f[i] ? cg.mix(f[i], _f, .5) : _f;
 	          this.lineWidth(fw[i]+.002).color('black').line(f[i], f[i]);
                }
-	       for (let i = 1 ; i < 5 ; i++) {
-	          let d = cg.distance(f[0],f[i]);
-	          p[i] = d > 0 && d < .023;
-               }
-	       this.lineWidth(fw[0]).color(co[p[1]?1:p[2]?2:p[3]?3:p[4]?4:0]).line(f[0], f[0]); // SHOW THUMB
 	       for (let i = 1 ; i < 5 ; i++)
-	          this.lineWidth(fw[i]).color(p[i] ? co[i] : co[0]).line(f[i], f[i]); // SHOW FINGER
+	          p[i] = isTouching(f[0], f[i]);
+	       this.lineWidth(fw[0]).color(isPurple?purple:co[p[1]?1:p[2]?2:p[3]?3:p[4]?4:0]).line(f[0], f[0]); // SHOW THUMB
+	       for (let i = 1 ; i < 5 ; i++)
+	          this.lineWidth(fw[i]).color(isPurple ? purple : p[i] ? co[i] : co[0]).line(f[i], f[i]); // SHOW FINGER
 	    }
             else {
 	       F[hand][0] = F[hand][1] = cg.mMultiply(clay.inverseRootMatrix,
