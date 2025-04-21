@@ -36,6 +36,22 @@ window.clientState = {
       else
          return clientState.button(id,hand,i<1?0:i-1);
    },
+   point : (id,hand) => {
+      if (! clientState.isHand(id))
+         return 0;
+      let mat = clientState.hand(id,hand);
+      if (! mat)
+         return 0;
+      let h = cg.mTransform(mat, [0,0,0]), f = [], d = [];
+      for (let i = 0 ; i < 5 ; i++) {
+         f.push(clientState.finger(id,hand,i));
+	 d.push(cg.distance(h,f[i]));
+      }
+      if (d[0] == 0 || d[1] < 2 * d[2])
+         return 0;
+      let t = cg.subtract(f[0], h);
+      return (100 + 100 * t[1] / cg.norm(t) >> 0) / 100;
+   },
 }
 window.clientData = {};
 
@@ -87,6 +103,10 @@ export function ClientStateSharing() {                                          
 	       state = false;
             if (state != null) {
                message({ hand: hand, button: b, state: state });                 //                                 //
+	       if (! clientData[clientID])
+	          clientData[clientID] = {};
+	       if (! clientData[clientID][hand])
+	          clientData[clientID][hand] = {};
                clientData[clientID][hand][b] = state;                            // Set my own button state.        //
             }
          }                                                                       // Optionally, also update left    //
