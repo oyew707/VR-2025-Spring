@@ -1,6 +1,5 @@
 import * as cg from "../render/core/cg.js";
 import { G3 } from "../util/g3.js";
-import { texts } from "../util/texts.js";
 
 let red_ball = new Image();
 red_ball.src = 'media/textures/red_ball.png';
