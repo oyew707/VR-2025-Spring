@@ -3,17 +3,6 @@ import * as cg from "../render/core/cg.js";
 import { buttonState, controllerMatrix } from "../render/core/controllerInput.js";
 import { lcb, rcb } from '../handle_scenes.js'
 
-function createCubeMatrix(discCenter, discRadius, thickness = 0.1) {
-    // Translate the cube to the disc's center
-    let translation = cg.mTranslate(discCenter[0], discCenter[1], discCenter[2]);
-
-    // Scale the cube to wrap the disc
-    let scale = cg.mScale(discRadius, discRadius, thickness);
-
-    // Combine translation and scale
-    return cg.mMultiply(translation, scale);
-}
-
 function findValidTower(discPosition, towers) {
 
     const maxDistance = 0.2; // Maximum allowed distance from the tower
@@ -38,7 +27,7 @@ function findValidTower(discPosition, towers) {
             const targetY = topDisc ? topDisc.position[1] : baseY;
 
             // Check if the disc can be placed on top of the stack or base
-            if (targetY+xTolerance >= discPosition[1] >= targetY) {
+            if (targetY+xTolerance >= discPosition[1] >= targetY-0.1) {
                 return i; // Return the index of the valid tower
             }
         }
@@ -87,16 +76,14 @@ export const init = async model => {
             
             // Position each disc directly on top of the previous one
             const yPos = baseY + (i * discHeight);
-            
-            let disc = model.add('donut')
-                .color(colors[discIndex % colors.length])
-                .move(towers[0].pos, yPos, 0)
-                .turnX(Math.PI/2)
-                .scale(discWidth, discWidth, discHeight);
+            let discGroup = model.add();
+            discGroup.disc = discGroup.add('donut');
+            discGroup.collisionCube = discGroup.add('cube');
             let discObject = {
                 color: colors[discIndex % colors.length],
                 value: discWidth,
-                object: disc,
+                height: discHeight,
+                object: discGroup,
                 position: [towers[0].pos, yPos, 0],
                 valid_position: [towers[0].pos, yPos, 0],
                 tower: 0,                
@@ -109,10 +96,7 @@ export const init = async model => {
 
     createDiscs(5); // Start with 3 discs
     let selectedDisc = null;
-    let lastControllerPosition = null;
-    let canMove = false;
-
-    let controllerPos = controllerMatrix.left ? controllerMatrix.left.slice(12,15) : controllerMatrix.right ? controllerMatrix.right.slice(12,15) : undefined;
+    let offset = null;
 
     model.move(0,1.5,0).scale(.1).animate(() => {
         board.identity();
@@ -120,165 +104,103 @@ export const init = async model => {
         if (!controllerMatrix.left || !controllerMatrix.right) {
             return; // Skip frame if controller tracking is lost
         }
+        // Update all disc positions and orientations
+        discs.forEach((disc, index, array) => {
+            disc.object.disc
+                .identity()
+                .color(...disc.color)
+                .scale(disc.value, disc.value, disc.height);
+            disc.object.collisionCube
+                .identity()
+                .opacity(0.0001)
+                .scale(disc.value, disc.value, disc.height/2);
+            disc.object.identity()
+                .move(...disc.position)
+                .turnX(Math.PI/2);
+            // console.log(index, "Disc position:", disc.position);
+            // console.log(index, "Disc scale:", disc.value, disc.value, disc.height);
+        });
         
         // input
         let leftPressed   = buttonState.left[0].pressed;
         let rightPressed  = buttonState.right[0].pressed;
-        let leftReleased = !buttonState.left[0].pressed;
-        let rightReleased = !buttonState.right[0].pressed;
 
-        let lastControllerPosition = leftPressed ? controllerMatrix.left.slice(12,15) : rightPressed ? controllerMatrix.right.slice(12,15) : undefined;
-
-        discs.forEach(disc => {
-            if (leftPressed || rightPressed) {
-                console.log("Left Pressed:", leftPressed);
-                // Create the transformation matrix for the disc
-                let discMatrix = createCubeMatrix(disc.position, disc.value);
-                console.log("Disc Matrix:", discMatrix);
-                
-                // Check for intersection with the controller ray
-                let isHit = leftPressed ? lcb.hitRect(discMatrix) : rightPressed ? rcb.hitRect(discMatrix) : false;
-
-                if (isHit) {
-                    console.log('Its hit');
-                    canMove = towers[disc.tower].stack.peek().value == disc.value;
-
-                    // Calculate the change in controller position
-                    let delta = cg.subtract(controllerPos, lastControllerPosition);
-                    console.log("Delta:", delta);
-        
-                    // Compute the new position for the selected disc
-                    let newPosition = cg.add(disc.position, delta);
-
-                    // Create the transformation matrix for the selected disc at the new position
-                    let newDiscMatrix = createCubeMatrix(newPosition, disc.value);
-
-                    // Check for collisions with other discs
-                    let noCollision = discs.some(otherDisc => {
-                        if (otherDisc === disc) return true; // Skip the selected disc itself
-                        let otherDiscMatrix = createCubeMatrix(otherDisc.position, otherDisc.value);
-                        return !cg.isBoxIntersectBox(newDiscMatrix, otherDiscMatrix);
-                    });
-                    if (noCollision) {
-                        disc.position = newPosition;
-
-                        // Update the disc's transformation
-                        console.log("Moved disc to:", disc.position);
-
-                    }
-                } else {
-                    console.log('Not hit');
-                    canMove = false;
+        if ((leftPressed || rightPressed) && !selectedDisc) {
+            console.log("Pressed and not selected");
+            // Check for intersection with discs
+            for (let i = 0; i < discs.length; i++) {
+                let disc = discs[i];
+                const hit = (leftPressed ? lcb : rcb).hitRect(disc.object.collisionCube.getGlobalMatrix());
+                if (hit) {console.log("Tower:", disc.tower, "TOwer:", towers[disc.tower]);}
+                // Check if the disc is at the top of the stack and the controller is close enough
+                if (hit && towers[disc.tower].stack.peek() === disc) {
+                    // Select the disc
+                    selectedDisc = disc;
+                    let projectedPosition = (leftPressed ? lcb : rcb).projectOntoBeam(selectedDisc.position);
+                    offset = cg.subtract(disc.position, projectedPosition);
+                    break;
                 }
             }
-            disc.object
-                .identity()
-                .color(disc.color)
-                .move(...disc.position)
-                .turnX(Math.PI/2)
-                .scale(disc.value, disc.value, discHeight);
-        });
-        
-        lastControllerPosition = controllerPos;
+        } else if (selectedDisc && (leftPressed || rightPressed)) {
+            // Use projectOntoBeam to get the new position
+            const previousPosition = selectedDisc.position;
+            const projectedPosition = (leftPressed ? lcb : rcb).projectOntoBeam(selectedDisc.position);
+            const newPosition = cg.add(projectedPosition, offset);
 
-        // if (leftPressed || rightPressed) {
-        //     if (!selectedDisc) {
-        //         // Check for intersection with discs
-        //         discs.forEach(disc => {
-        //             let discMatrix = createCubeMatrix(disc.position, disc.value);
-        //             let isHit = leftPressed ? lcb.hitRect(discMatrix) : rightPressed ? rcb.hitRect(discMatrix) : false;
-    
-        //             if (isHit) {
-        //                 selectedDisc = disc; // Select the disc
-        //                 lastControllerPosition = controllerPos; // Store the controller's position
-        //                 canMove = towers[selectedDisc.tower].stack.peek().value == selectedDisc.value;  // Check if the disc can be moved, i.e. at the top of the stack
-        //             }
-        //         });
-        //     } else if (lastControllerPosition && controllerPos && canMove) {
-        //         // Calculate the change in controller position
-        //         let delta = cg.subtract(controllerPos, lastControllerPosition);
-    
-        //         // Compute the new position for the selected disc
-        //         let newPosition = cg.add(selectedDisc.position, delta);
+            // Update the matrix with the new position to check for collision
+            let newDiscMatrix = selectedDisc.object.collisionCube.getGlobalMatrix(); // Get the current matrix
+            newDiscMatrix[12] = newPosition[0]; // Update X position
+            newDiscMatrix[13] = newPosition[1]; // Update Y position
+            newDiscMatrix[14] = newPosition[2]; // Update Z position
 
-        //         // Create the transformation matrix for the selected disc at the new position
-        //         let newDiscMatrix = createCubeMatrix(newPosition, selectedDisc.value);
+            // TODO: Work on collision detection, this does not work
+            // Check for collision with other discs
+            let noCollision = discs.some(otherDisc => {
+                if (otherDisc === selectedDisc) return true; // Skip the selected disc itself
 
-        //         // Check for collisions with other discs
-        //         let noCollision = discs.some(otherDisc => {
-        //             if (otherDisc === selectedDisc) return true; // Skip the selected disc itself
-        //             let otherDiscMatrix = createCubeMatrix(otherDisc.position, otherDisc.value);
-        //             return !cg.isBoxIntersectBox(newDiscMatrix, otherDiscMatrix);
-        //         });
-    
-        //         // If no collision, update the position and transformation of the selected disc
-        //         if (noCollision) {
-        //             selectedDisc.position = newPosition;
+                let otherDiscMatrix = otherDisc.object.collisionCube.getGlobalMatrix(); // Get the matrix for the other disc
+                return !cg.isBoxIntersectBox(newDiscMatrix, otherDiscMatrix); // Check for collision
+            });
+            if (noCollision) {
+                console.log("No collision detected");
+                // If no collision, update the position
+                selectedDisc.position = newPosition;
+                selectedDisc.object.identity().move(...selectedDisc.position).turnX(Math.PI/2);;
+            } else {
+                console.log("Collision detected, reverting to previous position");
+                // If there is a collision, revert to the previous position
+                selectedDisc.position = previousPosition;
+                selectedDisc.object.identity().move(...selectedDisc.position).turnX(Math.PI/2);;
+            }
+        } else if (selectedDisc) {
+            console.log("Released");
+            // Check if the disc is dropped on a valid tower
+            const newTowerIndex = findValidTower(selectedDisc.position, towers);
+            if (newTowerIndex !== null && newTowerIndex !== selectedDisc.tower) {
+                const oldTowerStack = towers[selectedDisc.tower].stack;
+                const newTowerStack = towers[newTowerIndex].stack;
+                const newYPosition = newTowerStack.peek() ? newTowerStack.peek().position[1] + 0.2 : baseY;
 
-        //             // Update the disc's transformation
-        //             selectedDisc.object.setMatrix(
-        //                 cg.mMultiply(
-        //                     cg.mTranslate(selectedDisc.position[0], selectedDisc.position[1], selectedDisc.position[2]),
-        //                     cg.mMultiply(
-        //                         cg.mRotateX(Math.PI / 2), // Rotate the disc on the X-axis
-        //                         cg.mScale(selectedDisc.value * 2, selectedDisc.value * 2, 0.2) // Apply scaling
-        //                     )
-        //                 )
-        //             );
-        //             console.log("Moved disc to:", selectedDisc.position);
+                console.log("Dropped on tower:", newTowerIndex);
 
-        //             // Update the last controller position
-        //             lastControllerPosition = controllerPos;
-        //         }
-                
-        //     }
-        // }
-
-        // if (leftReleased || rightReleased) {
-        //     if (selectedDisc) {  
-        //         // Check if the disc is dropped on a valid tower
-        //         let newTower = findValidTower(selectedDisc.position, towers);
-        //         if (newTower != null) {
-        //             let oldTower = towers[selectedDisc.tower];
-        //             let newTowerObj = towers[newTower];
-                    
-        //             // Add the disc to the new tower
-        //             let isPushed = newTowerObj.stack.push(selectedDisc);
-        //             if (isPushed) {
-        //                 // Remove the disc from the old tower
-        //                 oldTower.stack.pop();
-
-        //                 // Update the disc's tower index
-        //                 selectedDisc.tower = newTower;
-
-        //                 // Update the disc's position to be on top of the new tower
-        //                 selectedDisc.position = [towers[newTower].pos, selectedDisc.position[1], 0];
-        //                 selectedDisc.valid_position = selectedDisc.position;
-        //             }
-        //             console.log("Moved disc to tower:", newTower);
-
-        //         } else {
-        //             // If not dropped on a valid tower, return to original position
-        //             selectedDisc.position = selectedDisc.valid_position;
-        //         }
-        //         // Update the disc's transformation
-        //         selectedDisc.object.setMatrix(
-        //             cg.mMultiply(
-        //                 cg.mTranslate(selectedDisc.position[0], selectedDisc.position[1], selectedDisc.position[2]),
-        //                 cg.mMultiply(
-        //                     cg.mRotateX(Math.PI / 2), // Rotate the disc on the X-axis
-        //                     cg.mScale(selectedDisc.value * 2, selectedDisc.value * 2, 0.2) // Apply scaling
-        //                 )
-        //             )
-        //         );
-        //     }
-        //     selectedDisc = null; // Deselect the disc
-        //     lastControllerPosition = null; // Reset the last controller position
-        //     canMove = false; // Reset the move flag
-        //     // Check if the disc is dropped on a valid tower
-            
-        // }
-
+                if (newTowerStack.push(selectedDisc)) {
+                    oldTowerStack.pop();
+                    selectedDisc.tower = newTowerIndex;
+                    selectedDisc.position = [towers[newTowerIndex].pos, newYPosition, 0];
+                    selectedDisc.valid_position = selectedDisc.position;
+                } else {
+                    // If the disc can't be placed, return it to its original position
+                    selectedDisc.position = [...selectedDisc.valid_position];
+                    console.log("Invalid move, returning to original position");
+                }
+            } else {
+                // If not dropped on a valid tower, return to original position
+                selectedDisc.position = [...selectedDisc.valid_position];
+            }
+            // Update the disc's transformation
+            selectedDisc = null;
+        }
     });
+        
  }
  
