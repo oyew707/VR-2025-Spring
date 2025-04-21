@@ -254,9 +254,13 @@ export let G3 = function(model, callback) {
 	             let f = [], p = [];
 	             for (let i = 0 ; i < 5 ; i++) f[i] = clientState.finger(id,hand,i);
 	             for (let i = 1 ; i < 5 ; i++) p[i] = clientState.pinch (id,hand,i);
-	             for (let i = 0 ; i < 5 ; i++) this.lineWidth(fw[i]+.002).color('black').line(f[i], f[i]);
-		     this.lineWidth(fw[0]).color(co[p[1]?1:p[2]?2:p[3]?3:p[4]?4:0]).line(f[0], f[0]);
-	             for (let i = 1 ; i < 5 ; i++) this.lineWidth(fw[i]).color(co[p[i]?i:0]).line(f[i], f[i]);
+	             for (let i = 0 ; i < 5 ; i++) this.lineWidth(fw[i]+.002).color('black').line(f[i],f[i]);
+		     let point = clientState.point(id,hand);
+		     if (point >= 0.5 && point < 1.6) p[5] = true;
+		     if (point >= 1.5) p[6] = true;
+		     this.lineWidth(fw[0]).color(co[p[1]?1:p[2]?2:p[3]?3:p[4]?4:p[5]?5:p[6]?6:0]).line(f[0],f[0]);
+		     this.lineWidth(fw[1]).color(co[p[1]?1:p[5]?5:p[6]?6:0]).line(f[1],f[1]);
+	             for (let i = 2 ; i < 5 ; i++) this.lineWidth(fw[i]).color(co[p[i]?i:0]).line(f[i],f[i]);
 	          }
                   else {
 	             let p = m.slice(12,15);
