@@ -3,6 +3,8 @@ import * as cg from "../render/core/cg.js";
 import { buttonState, controllerMatrix } from "../render/core/controllerInput.js";
 import { lcb, rcb } from '../handle_scenes.js'
 
+let numOfDiscs = 5; // Number of discs in the game
+
 function findValidTower(discPosition, towers) {
 
     const maxDistance = 0.2; // Maximum allowed distance from the tower
@@ -36,6 +38,15 @@ function findValidTower(discPosition, towers) {
     return null; // No valid tower found
 }
 
+function checkCompleteState(towers) {
+    let lastTower = towers[towers.length - 1].stack;
+    if (lastTower.size() === numOfDiscs) {
+        console.log("Game Complete");
+        return true;
+    }
+    return false;
+}
+
 
 export const init = async model => {
 
@@ -46,7 +57,7 @@ export const init = async model => {
     let towerPos = [-1.5, 0, 1.5];
     let towers = [];
     towerPos.forEach((pos, i) => {
-        let tower = board.add('tubeY').txtr(1).move(pos, 1, 0).scale(0.1, 1, 0.1);
+        let tower = board.add('tubeY').txtr(1).move(pos, 1, 0).scale(0.1, 1, 0.1).opacity(0.5);
         let tStack = new towerStack();
         towers.push({
             object: tower,
@@ -94,12 +105,13 @@ export const init = async model => {
         }
     };
 
-    createDiscs(5); // Start with 3 discs
+    createDiscs(numOfDiscs); // Start with 5 discs
     let selectedDisc = null;
     let offset = null;
 
-    model.move(0,1.5,0).scale(.1).animate(() => {
+    model.move(0,1.5,0.5).scale(.1).animate(() => {
         board.identity();
+        checkCompleteState(towers)
 
         if (!controllerMatrix.left || !controllerMatrix.right) {
             return; // Skip frame if controller tracking is lost
@@ -126,12 +138,10 @@ export const init = async model => {
         let rightPressed  = buttonState.right[0].pressed;
 
         if ((leftPressed || rightPressed) && !selectedDisc) {
-            console.log("Pressed and not selected");
             // Check for intersection with discs
             for (let i = 0; i < discs.length; i++) {
                 let disc = discs[i];
                 const hit = (leftPressed ? lcb : rcb).hitRect(disc.object.collisionCube.getGlobalMatrix());
-                if (hit) {console.log("Tower:", disc.tower, "TOwer:", towers[disc.tower]);}
                 // Check if the disc is at the top of the stack and the controller is close enough
                 if (hit && towers[disc.tower].stack.peek() === disc) {
                     // Select the disc
@@ -173,7 +183,6 @@ export const init = async model => {
                 selectedDisc.object.identity().move(...selectedDisc.position).turnX(Math.PI/2);;
             }
         } else if (selectedDisc) {
-            console.log("Released");
             // Check if the disc is dropped on a valid tower
             const newTowerIndex = findValidTower(selectedDisc.position, towers);
             if (newTowerIndex !== null && newTowerIndex !== selectedDisc.tower) {

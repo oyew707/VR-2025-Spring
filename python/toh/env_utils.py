@@ -13,6 +13,7 @@ from PIL import Image
 import io
 import time
 import os
+from typing import List
 from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -132,7 +133,6 @@ def get_screenshot(driver: webdriver.Chrome) -> Image:
     -------------------------------------------------------
     """
     assert driver is not None, "Driver is not initialized"
-
     assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
     # Take screenshot
     screenshot = driver.get_screenshot_as_png()
@@ -280,5 +280,59 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
     """)
 
 
+def getConsoleLogs(driver: webdriver.Chrome) -> List[dict]:
+    """
+    -------------------------------------------------------
+    Returns the console logs from the browser.
+    -------------------------------------------------------
+    Parameters:
+       driver - Selenium WebDriver instance (webdriver.Chrome)
+    Returns:
+       console_logs - List of console log entries (List[dict])
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {webdriver.current_url}"
+
+    # Read Logs
+    console_logs = driver.get_log('browser')
+    return console_logs
+
+
+def checkTerminal(console_logs: List[dict]) -> bool:
+    """
+    -------------------------------------------------------
+    Check if the game is complete by reading the console logs.
+    -------------------------------------------------------
+    Parameters:
+        console_logs - List of console log entries (List[dict])
+    Returns:
+        True if the game is complete, False otherwise
+    -------------------------------------------------------
+    """
+    for entry in console_logs:
+        if 'Game Complete' in entry['message']:
+            print(f'Terminal Log: {entry["message"]}')
+            return True
+    return False
+
+
+def checkInvalidMove(console_logs: List[dict]) -> bool:
+    """
+    -------------------------------------------------------
+    Checks if an invalid move was made to put a disc on top of
+    a smaller disc.
+    -------------------------------------------------------
+    Parameters:
+        console_logs - List of console log entries (List[dict])
+    Returns:
+        True if an invalid move was made, False otherwise
+    -------------------------------------------------------
+    """
+    for entry in console_logs:
+        if 'Invalid move' in entry['message']:
+            print(f'Terminal Log: {entry["message"]}')
+            return True
+    return False
 
 
