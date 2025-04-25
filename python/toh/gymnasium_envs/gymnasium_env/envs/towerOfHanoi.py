@@ -50,9 +50,9 @@ class TowerOfHanoiEnv(gym.Env):
 
         self.action_space = spaces.Dict({
             # Continuous components (3D position (first 3) + quaternion (last 4))
-            "left_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
-                                        high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
-                                        dtype=np.float32),
+            # "left_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
+            #                             high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
+            #                             dtype=np.float32),
             "right_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
                                          high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
                                          dtype=np.float32),
@@ -92,11 +92,11 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         """
         headset_state = get_headset_state(self.webdriver)
-        left_controller_state = get_controller_state(self.webdriver, "left")
+        #left_controller_state = get_controller_state(self.webdriver, "left")
         right_controller_state = get_controller_state(self.webdriver, "right")
         return {
             "headset": headset_state,
-            "left_controller": left_controller_state,
+            #"left_controller": left_controller_state,
             "right_controller": right_controller_state
         }
 
@@ -160,10 +160,10 @@ class TowerOfHanoiEnv(gym.Env):
 
         if action == Actions.headset.value:
             headset_input(self.webdriver, change_position, change_orientation)
-        elif action == Actions.left.value:
-            butt = "pressed" if button else "released"
-            controller_input(self.webdriver, "left", change_position,
-                             change_orientation, buttonIndex=1, buttonState=butt)
+        # elif action == Actions.left.value:
+        #     butt = "pressed" if button else "released"
+        #     controller_input(self.webdriver, "left", change_position,
+        #                      change_orientation, buttonIndex=1, buttonState=butt)
         elif action == Actions.right.value:
             butt = "pressed" if button else "released"
             controller_input(self.webdriver, "right", change_position,
@@ -186,3 +186,4 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         """
         self.webdriver.quit()
+
