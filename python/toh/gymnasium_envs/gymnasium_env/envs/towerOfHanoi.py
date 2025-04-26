@@ -87,16 +87,18 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         Returns:
             info (dict): A dictionary containing the state of the headset
-                         and controllers.
+                         and controllers as well as the disc and towers.
         -------------------------------------------------------
         """
         headset_state = get_headset_state(self.webdriver)
         left_controller_state = get_controller_state(self.webdriver, "left")
         right_controller_state = get_controller_state(self.webdriver, "right")
+        tower_state = get_tower_state(self.webdriver)
         return {
             "headset": headset_state,
             "left_controller": left_controller_state,
-            "right_controller": right_controller_state
+            "right_controller": right_controller_state,
+            "tower": tower_state  # Uncomment if needed
         }
 
     def reset(self, seed=None, options=None):
@@ -220,8 +222,8 @@ class TowerOfHanoiEnv(gym.Env):
             raise ValueError("Invalid action")
 
         # An episode is done iff the agent has reached the target
-        console_logs = getConsoleLogs(self.webdriver)
-        terminated = checkTerminal(console_logs)
+        console_logs = get_console_logs(self.webdriver)
+        terminated = check_terminal(console_logs)
         # 100 if the agent has reached the target, -1 if the agent has made an invalid move
         reward = 100 if terminated else -1 if checkInvalidMove(console_logs) else 0
         observation = self._get_obs()

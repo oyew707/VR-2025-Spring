@@ -7,8 +7,8 @@ Email:   eo223@nyu.edu
 __updated__ = "4/12/25"
 -------------------------------------------------------
 """
-
 # Imports
+import numpy as np
 from PIL import Image
 import io
 import time
@@ -194,7 +194,7 @@ def get_controller_state(driver: webdriver.Chrome, hand: str) -> dict:
     return controller_state
 
 
-def headset_input(driver: webdriver.Chrome, delta_position: list[float], delta_angles: list[float]):
+def headset_input(driver: webdriver.Chrome, delta_position: list[float] | np.ndarray, delta_angles: list[float]):
     """
     -------------------------------------------------------
     Controls the headset position and angles. Affects the
@@ -226,7 +226,7 @@ def headset_input(driver: webdriver.Chrome, delta_position: list[float], delta_a
     """)
 
 
-def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[float],
+def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[float] | np.ndarray,
                      delta_angles: list[float], buttonIndex: int = 1, buttonState: str = 'released'):
     """
     -------------------------------------------------------
@@ -280,7 +280,7 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
     """)
 
 
-def getConsoleLogs(driver: webdriver.Chrome) -> List[dict]:
+def get_console_logs(driver: webdriver.Chrome) -> List[dict]:
     """
     -------------------------------------------------------
     Returns the console logs from the browser.
@@ -299,7 +299,7 @@ def getConsoleLogs(driver: webdriver.Chrome) -> List[dict]:
     return console_logs
 
 
-def checkTerminal(console_logs: List[dict]) -> bool:
+def check_terminal(console_logs: List[dict]) -> bool:
     """
     -------------------------------------------------------
     Check if the game is complete by reading the console logs.
@@ -336,3 +336,36 @@ def checkInvalidMove(console_logs: List[dict]) -> bool:
     return False
 
 
+def get_tower_state(driver: webdriver.Chrome) -> dict:
+    """
+    -------------------------------------------------------
+    Get the state of the tower.
+    -------------------------------------------------------
+    Parameters:
+        driver - Selenium WebDriver instance (webdriver.Chrome)
+    Returns:
+        tower_state - Dictionary containing tower state information
+            discs: An array of objects, each representing a disc in the game. Each disc has the following properties:
+                color: An array of 3 values representing the RGB color of the disc.
+                value: A numerical value representing the size or weight of the disc.
+                height: The height of the disc.
+                position: current position of the disc (x,y,z)
+                valid_position: the last valid position for the disc (x,y,z)
+                tower: The ID of the tower the disc is currently on.
+                did: A unique identifier for the disc.
+            selectedDisc: index in discs of the current disc being moved (Optional(int))
+            towers: An array of objects, each representing a tower in the game. Each tower has the following properties:
+                pos: The position of the tower in the game space.
+                tid: A unique identifier for the tower.
+            terminal: A boolean indicating whether the game is complete.
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
+
+    # Get tower state
+    tower_state = driver.execute_script(f"""
+        towerState = server.synchronize('towerState’);
+        return towerState;
+    """)
+    return tower_state
