@@ -282,19 +282,15 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
 
 from typing import Tuple
 
-def get_disk_pose(driver, disk_id: int) -> Tuple[float, float, float]:
-    """
-    -------------------------------------------------------
-    Return the (x, y, z) world‐coordinates of the center of disk `disk_id`.
-    Expects window._hanoi_discs to be populated in your JS.
-    -------------------------------------------------------
-    """
-    js = f"""
-    // pull the .position array from the browser global
-    const p = window._hanoi_discs[{disk_id}].position;
-    return [p[0], p[1], p[2]];
-    """
-    return tuple(driver.execute_script(js))
+def get_disk_pose(driver, disk_id=0):
+    js = f"return window._hanoi_discs?.[{disk_id}]?.position || null;"
+    for _ in range(45):
+        pos = driver.execute_script(js)
+        if pos is not None:
+            return tuple(pos)
+        time.sleep(0.2)
+    raise RuntimeError(f"Disk {disk_id} position not available after retries.")
+
 
 
 def get_peg_pose(driver, peg_index: int) -> Tuple[float, float, float]:
