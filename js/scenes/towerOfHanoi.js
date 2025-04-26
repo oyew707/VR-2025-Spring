@@ -6,8 +6,8 @@ import { lcb, rcb } from '../handle_scenes.js'
 function findValidTower(discPosition, towers) {
 
     const maxDistance = 0.2; // Maximum allowed distance from the tower
-    const xTolerance = 0.3; // Degree of freedom for the x-axis
-    const baseY = 0.2;      // Default Y position for the base of the tower
+    const xTolerance = 0.3;  // Degree of freedom for the x-axis
+    const baseY = 0.2;       // Default Y position for the base of the tower
 
     for (let i = 0; i < towers.length; i++) {
         const tower = towers[i];

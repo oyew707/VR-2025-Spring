@@ -53,35 +53,41 @@ def setup_browser(render: bool = True) -> webdriver.Chrome:
     -------------------------------------------------------
     """
     chrome_options = Options()
+
+    # Use your Chrome profile to keep WebXR flags active
+    chrome_options.add_argument("user-data-dir=C:/Users/user/AppData/Local/Google/Chrome/User Data")
+
+    # Add VR Emulator extension
     chrome_options.add_extension(EMULATOR_PATH)
 
-    # Enable Logging
+    # Enable detailed logging
     chrome_options.set_capability('goog:loggingPrefs', {'browser': 'ALL', 'driver': 'ALL'})
     chrome_options.add_argument("--enable-logging")
 
-    # Essential developer mode preferences
+    # Developer mode preferences
     chrome_options.add_experimental_option("prefs", {
         "extensions.ui.developer_mode": True,
         "devtools.preferences.currentDockState": '"undocked"',
         "devtools.preferences.devToolsPosition": '"bottom"'
     })
 
-    # Required flags for WebXR
+    # Enable WebXR features
     chrome_options.add_argument("--enable-webxr")
-    chrome_options.add_argument("--enable-features=WebXR")
+    chrome_options.add_argument("--enable-features=WebXR,WebXRHandInput,WebXRIncubations,WebXRProjectionLayers")
     chrome_options.add_argument("--ignore-certificate-errors")
     chrome_options.add_argument("--allow-insecure-localhost")
     chrome_options.add_argument("--auto-open-devtools-for-tabs")
 
-    # Security exceptions for local testing
+    # Security for local server
     chrome_options.add_argument("--unsafely-treat-insecure-origin-as-secure=http://localhost:2024")
 
-    # Headless mode not recommended for XR emulation
+    # Headless mode (if disabled, fully visual for VR)
     if not render:
-        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless=new")
 
     driver = webdriver.Chrome(options=chrome_options)
     return driver
+
 
 
 def enter_xr_mode(driver: webdriver.Chrome):
@@ -280,33 +286,28 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
     """)
 
 
-from typing import Tuple
+# from typing import Tuple
 
-def get_disk_pose(driver, disk_id=0):
-    js = f"return window._hanoi_discs?.[{disk_id}]?.position || null;"
-    for _ in range(45):
-        pos = driver.execute_script(js)
-        if pos is not None:
-            return tuple(pos)
-        time.sleep(0.2)
-    raise RuntimeError(f"Disk {disk_id} position not available after retries.")
+# def get_disk_pose(webdriver, disk_id=0):
+#     # Ask JavaScript directly for the disk's 3D position
+#     pose = webdriver.execute_script(f"""
+#         if (window.discs && window.discs[{disk_id}]) {{
+#             return window.discs[{disk_id}].position;
+#         }} else {{
+#             return null;
+#         }}
+#     """)
+#     if pose is None:
+#         raise RuntimeError(f"Disk {disk_id} position not available.")
+#     return pose
 
 
-
-def get_peg_pose(driver, peg_index: int) -> Tuple[float, float, float]:
-    """
-    -------------------------------------------------------
-    Return the (x, y, z) target coords on top of peg `peg_index`.
-    If the peg is empty, uses base height = 0.2.
-    Expects window._hanoi_towers to be populated in your JS.
-    -------------------------------------------------------
-    """
-    js = f"""
-    const tower = window._hanoi_towers[{peg_index}];
-    const top = tower.stack.peek();
-    const y    = top ? (top.position[1] + top.height) : 0.2;
-    return [tower.pos, y, 0];
-    """
-    return tuple(driver.execute_script(js))
-
+# def get_peg_pose(driver, peg_index: int) -> Tuple[float, float, float]:
+#     js = f"""
+#     const tower = window._hanoi_towers[{peg_index}];
+#     const top = tower.stack.peek();
+#     const y    = top ? (top.position[1] + top.height) : 0.2;
+#     return [tower.pos, y, 0];
+#     """
+#     return tuple(driver.execute_script(js))
 
