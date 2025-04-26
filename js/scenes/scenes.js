@@ -46,6 +46,7 @@ export default () => {
             { name: "latent_data"         , path: "./unsupervised_iris.js"   , public: true },
             { name: "tictactoe"           , path: "./tictactoe.js"           , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
             { name: "towerOfHanoi" , path: "./towerOfHanoi.js" , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
+            { name: "towerOfHanoiG3" , path: "./towerOfHanoiG3.js" , public: true   , background: 'media/gltf/cube-room/cube-room.gltf'},
             { name: "pinch1"         , path: "./pinch1.js"        , public: true  },
             { name: "pinch2"         , path: "./pinch2.js"        , public: true  },
             { name: "pinch3"         , path: "./pinch3.js"        , public: true  },
