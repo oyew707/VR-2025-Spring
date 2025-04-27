@@ -7,6 +7,7 @@ let numOfDiscs = 5; // Number of discs in the game
 const defTower = 0; // Default tower index
 let towerState = { discs: {}, selectedDisc: null, towers: {}, terminal: false };
 server.init('towerState', towerState); // Initialize shared state for discs and towers
+server.init('resetMessage', {}); // Initialize shared state for reset message
 let towers = {}, avatars = [], discs = {};
 
 function findValidTower(discPosition, towers) {
@@ -52,6 +53,24 @@ function checkCompleteState(towers) {
     return false;
 }
 
+function resetTowerState(model) {
+    console.log("Tower state reset");
+    // Reset the tower stacks
+    for (let t in towerState.towers) {
+        towers[t.tid].stack = new towerStack();
+    }
+    // Remove the discs from the model
+    for (d in discs){
+        model.removeNode(discs[d].object);
+    }
+    discs = {};
+    towerState.discs = {};
+    towerState.selectedDisc = null;
+    towerState.terminal = false;
+    // Reset the discs
+    createDiscs(numOfDiscs);
+    console.log("Discs reset");
+}
 
 export const init = async model => {
 
@@ -131,6 +150,10 @@ export const init = async model => {
         }
 
         if (Object.keys(towerState.discs).length === 0) {
+            console.log("No discs found, creating new discs");
+            createDiscs(numOfDiscs);
+        }
+        if (Object.keys(discs).length == 0){
             console.log("No discs found, creating new discs");
             createDiscs(numOfDiscs);
         }
@@ -247,6 +270,17 @@ export const init = async model => {
     if (clientID == clients[0]) {
         server.broadcastGlobal('towerState'); // Broadcast the updated state to all clients
     }
+    server.sync('resetMessage', msgs => {
+        console.log("Reset message received");
+        for (let id in msgs) {
+            console.log("Reset message from client:", id);
+            console.log("Reset message content:", msgs[id]);
+            if (msgs[id].reset) {
+                resetTowerState(model);
+            }
+        }
+    });
+
         
  }
  

@@ -85,6 +85,25 @@ def setup_browser(render: bool = True) -> webdriver.Chrome:
     return driver
 
 
+def reset_tower_state(driver: webdriver.Chrome):
+    """
+    -------------------------------------------------------
+    Resets the state of the tower to its initial configuration by sending a reset message to the server.
+    -------------------------------------------------------
+    Parameters:
+        driver - Selenium WebDriver instance (webdriver.Chrome)
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
+
+    # Get tower state
+    tower_state = driver.execute_script(f"""
+        server.send('resetMessage', {{reset: true}});
+    """)
+    return tower_state
+
+
 def enter_xr_mode(driver: webdriver.Chrome):
     """
     -------------------------------------------------------
@@ -95,11 +114,13 @@ def enter_xr_mode(driver: webdriver.Chrome):
          driver - Selenium WebDriver instance (webdriver.Chrome)
     -------------------------------------------------------
     """
+    if urlparse(driver.current_url).geturl() == URL:
+        print("Already on the correct URL, resetting...")
+        reset_tower_state(driver)
+        time.sleep(2)
+
     # Open the application URL/ Reload the page
-    if urlparse(driver.current_url).geturl() != URL:
-        driver.get(URL)
-    else:
-        driver.refresh()
+    driver.get(URL)
 
     # Click Tower of Hanoi mode button
     toh_button = WebDriverWait(driver, 10).until(
@@ -365,7 +386,7 @@ def get_tower_state(driver: webdriver.Chrome) -> dict:
 
     # Get tower state
     tower_state = driver.execute_script(f"""
-        towerState = server.synchronize('towerState’);
+        let towerState = server.synchronize('towerState');
         return towerState;
     """)
     return tower_state
