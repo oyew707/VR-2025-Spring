@@ -3,7 +3,7 @@ import * as cg from "../render/core/cg.js";
 import { buttonState, controllerMatrix } from "../render/core/controllerInput.js";
 import { lcb, rcb } from '../handle_scenes.js'
 
-let numOfDiscs = 5; // Number of discs in the game
+let numOfDiscs = 4; // Number of discs in the game
 const defTower = 0; // Default tower index
 let towerState = { discs: {}, selectedDisc: null, towers: {}, terminal: false };
 server.init('towerState', towerState); // Initialize shared state for discs and towers
@@ -111,7 +111,7 @@ export const init = async model => {
             const discWidth = minWidth + (discIndex * widthIncrement);
             
             // Position each disc directly on top of the previous one
-            const yPos = baseY + (i * discHeight);
+            const yPos = baseY + (i * (discHeight+0.1)); // Adjusted for better spacing
             let discGroup = model.add();
             discGroup.disc = discGroup.add('donut');
             discGroup.collisionCube = discGroup.add('cube');
@@ -135,7 +135,6 @@ export const init = async model => {
 
     let selectedDisc = null;
     let offset = null;
-    let printN = 0;
 
     model.move(0,1.5,-0.5).scale(.1).animate(() => {
         
@@ -158,6 +157,19 @@ export const init = async model => {
             createDiscs(numOfDiscs);
         }
 
+
+        // Update all collision cube position first
+        Object.values(discs).forEach((disc, index, array) => {
+            let discInfo = towerState.discs[disc.did];
+            disc.object.collisionCube
+                .identity()
+                .opacity(0.0001)
+                .scale(discInfo.value, discInfo.value, discInfo.height/2);
+            disc.object.identity()
+                .move(...discInfo.position)
+                .turnX(Math.PI/2);
+        });
+
         // Update all disc positions and orientations
         Object.values(discs).forEach((disc, index, array) => {
             let discInfo = towerState.discs[disc.did];
@@ -165,15 +177,9 @@ export const init = async model => {
                 .identity()
                 .color(...discInfo.color)
                 .scale(discInfo.value, discInfo.value, discInfo.height);
-            disc.object.collisionCube
-                .identity()
-                .opacity(0.0001)
-                .scale(discInfo.value, discInfo.value, discInfo.height);
             disc.object.identity()
                 .move(...discInfo.position)
                 .turnX(Math.PI/2);
-            // console.log(index, "Disc position:", disc.position);
-            // console.log(index, "Disc scale:", disc.value, disc.value, disc.height);
         });
         
         // input
@@ -183,37 +189,36 @@ export const init = async model => {
         if ((leftPressed || rightPressed) && !selectedDisc) {
             // Check for intersection with discs
             for (let i in discs) {
-                let disc = discs[i];
-                let discInfo = towerState.discs[i];
-                let towerInfo = towerState.towers[discInfo.tower];
-                let tower = towers[towerInfo.tid];
-                let hit = (leftPressed ? lcb : rcb).hitRect(disc.object.collisionCube.getGlobalMatrix());
-                // Check if the disc is at the top of the stack and the controller is close enough
-                // if (hit) {
-                //     console.log("Check start", tower.stack.peek() == discInfo);
-                //     console.log("Check end", tower.stack.peek(), discInfo);
-                // }
+                let disc = discs[i];  // Get the disc node object
+                let discInfo = towerState.discs[i];  // Get the disc info from the shared state
+                let towerInfo = towerState.towers[discInfo.tower];  // Get the tower info from the shared state
+                let tower = towers[towerInfo.tid];  // Get the tower object from the local towers object
+
+                let controllerPos = inputEvents.pos(leftPressed ? 'left' : 'right');
+                let globaldiscpos = disc.object.collisionCube.getGlobalPos();
+
+                let hit = (cg.distance([controllerPos[0], controllerPos[2]], [globaldiscpos[0], globaldiscpos[2]]) < 0.05 + (discInfo.value*0.1)) &&  // Check distance in XZ plane
+                          (Math.abs(controllerPos[1] - globaldiscpos[1]) < 0.05 + (discInfo.height*0.1)/2);  // Check distance in Y axis
+                console.log("Hit:", hit, "Controller Position:", controllerPos, "Disc Position:", globaldiscpos, "Sliced");
+
                 if (hit && tower.stack.peek().did == discInfo.did) {
                     // Select the disc
                     selectedDisc = disc;
                     towerState.selectedDisc = i;
-                    let projectedPosition = (leftPressed ? lcb : rcb).projectOntoBeam(discInfo.position);
-                    offset = cg.subtract(discInfo.position, projectedPosition);
-                    // console.log("Selected disc:", selectedDisc, "Offset:", offset, "index:", i);
                     break;
                 }
             }
         } else if ((selectedDisc && towerState.selectedDisc) && (leftPressed || rightPressed)) {
-            // Use projectOntoBeam to get the new position
-            const previousPosition = towerState.discs[towerState.selectedDisc].position;
-            const projectedPosition = (leftPressed ? lcb : rcb).projectOntoBeam(towerState.discs[towerState.selectedDisc].position);
-            const newPosition = cg.add(projectedPosition, offset);
+
+            let controllerPos = inputEvents.pos(leftPressed ? 'left' : 'right');
+            const newPosition = cg.scale(cg.subtract(controllerPos, [0, 1.5, -0.5]), 10);  // transformation to undo global positioning
+            console.log("New position:", newPosition);
 
             // Update the matrix with the new position to check for collision
             let newDiscMatrix = selectedDisc.object.collisionCube.getGlobalMatrix(); // Get the current matrix
-            newDiscMatrix[12] = newPosition[0]; // Update X position
-            newDiscMatrix[13] = newPosition[1]; // Update Y position
-            newDiscMatrix[14] = newPosition[2]; // Update Z position
+            newDiscMatrix[12] = controllerPos[0]; // Update X position
+            newDiscMatrix[13] = controllerPos[1]; // Update Y position
+            newDiscMatrix[14] = controllerPos[2]; // Update Z position
 
             // TODO: Work on collision detection, this does not work
             // Check for collision with other discs
