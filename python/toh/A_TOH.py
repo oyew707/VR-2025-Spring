@@ -7,6 +7,7 @@ from gymnasium.wrappers import TimeLimit
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.callbacks import BaseCallback
 
 # Import VR Environment
 from gymnasium_envs.gymnasium_env.envs.testEnv import VRHanoiEnv
@@ -28,6 +29,19 @@ class ActionRepeatWrapper(gym.Wrapper):
             if terminated or truncated:
                 break
         return obs, total_reward, terminated, truncated, info
+
+# ─── Restart Chrome Callback ───────────────────────────────────────────────
+class RestartChromeCallback(BaseCallback):
+    def __init__(self, env, check_freq=10_000, verbose=1):
+        super().__init__(verbose)
+        self.env = env
+        self.check_freq = check_freq
+
+    def _on_step(self) -> bool:
+        if self.num_timesteps % self.check_freq == 0:
+            print(f"🌟 {self.num_timesteps} timesteps reached — restarting browser.")
+            self.env.envs[0].restart_browser()
+        return True
 
 # ─── Flatten Dict-Action Space into Box ─────────────────────────────────────
 class ActionFlattenWrapper(gym.Wrapper):
@@ -59,10 +73,10 @@ class ActionFlattenWrapper(gym.Wrapper):
 # ─── Build Environment with Wrappers ────────────────────────────────────────
 def make_env():
     env = VRHanoiEnv(render=True, height=128, width=128)
-    env = TimeLimit(env, max_episode_steps=384)         # End episode after 200 steps
-    # env = ActionRepeatWrapper(env, n_repeat=2)        # Frame-skip = 2
-    env = ActionFlattenWrapper(env)                     # Flatten action space
-    env = Monitor(env, filename=None)                   # Track episode stats
+    env = TimeLimit(env, max_episode_steps=768)
+    # env = ActionRepeatWrapper(env, n_repeat=2)  # (optional)
+    env = ActionFlattenWrapper(env)
+    env = Monitor(env, filename=None)
     return env
 
 # ─── Setup Directories ──────────────────────────────────────────────────────
@@ -72,25 +86,31 @@ os.makedirs(log_dir, exist_ok=True)
 # ─── Initialize Vectorized Environment ──────────────────────────────────────
 vec_env = DummyVecEnv([make_env])
 
+# ─── Model Definition ───────────────────────────────────────────────────────
 model = PPO(
     policy="CnnPolicy",
     env=vec_env,
     verbose=1,
-    n_steps=128, 
-    batch_size=64, 
-    gamma=0.98, 
-    learning_rate=2.5e-4,
-    ent_coef=0.055, 
-    clip_range=0.2, 
-    n_epochs=5, 
+    n_steps=256,
+    batch_size=64,
+    gamma=0.98,
+    learning_rate=2e-4,
+    ent_coef=0.062,
+    clip_range=0.2,
+    n_epochs=10,
     gae_lambda=0.95,
-    max_grad_norm=1.2, 
+    max_grad_norm=0.7,
     tensorboard_log=log_dir
 )
 
-model.learn(total_timesteps=100_000)
-model.save("ppo_vrhanoi_stage2")
-print("✅ Training complete — model saved to ppo_vrhanoi_stage2.zip")
+# ─── Training With Safe Save ─────────────────────────────────────────────────
+try:
+    model.learn(total_timesteps=1_000_000, callback=RestartChromeCallback(vec_env))
+except KeyboardInterrupt:
+    print("\n⛔ Training interrupted by user!")
+finally:
+    model.save("ppo_vrhanoi_stage2")
+    print("✅ Model saved to 'ppo_vrhanoi_stage2.zip'.")
 
 # ─── Quick Final Evaluation ─────────────────────────────────────────────────
 test_env = VRHanoiEnv(render=True, height=512, width=512)

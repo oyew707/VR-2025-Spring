@@ -10,7 +10,6 @@ __updated__ = "4/14/25"
 # Imports
 from enum import Enum
 from typing import List
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -50,9 +49,9 @@ class TowerOfHanoiEnv(gym.Env):
 
         self.action_space = spaces.Dict({
             # Continuous components (3D position (first 3) + quaternion (last 4))
-            # "left_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
-            #                             high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
-            #                             dtype=np.float32),
+            "left_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
+                                        high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
+                                        dtype=np.float32),
             "right_movement": spaces.Box(low=np.array([-3, 0, -3, -np.pi, -np.pi, -np.pi, -np.pi]),
                                          high=np.array([3, 3, 3, np.pi, np.pi, np.pi, np.pi]),
                                          dtype=np.float32),
@@ -88,16 +87,18 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         Returns:
             info (dict): A dictionary containing the state of the headset
-                         and controllers.
+                         and controllers as well as the disc and towers.
         -------------------------------------------------------
         """
         headset_state = get_headset_state(self.webdriver)
-        #left_controller_state = get_controller_state(self.webdriver, "left")
+        left_controller_state = get_controller_state(self.webdriver, "left")
         right_controller_state = get_controller_state(self.webdriver, "right")
+        tower_state = get_tower_state(self.webdriver)
         return {
             "headset": headset_state,
-            #"left_controller": left_controller_state,
-            "right_controller": right_controller_state
+            "left_controller": left_controller_state,
+            "right_controller": right_controller_state,
+            "tower": tower_state  # Uncomment if needed
         }
 
     def reset(self, seed=None, options=None):
@@ -126,6 +127,57 @@ class TowerOfHanoiEnv(gym.Env):
 
         return observation, info
 
+    def _process_action(self, action: int, change_position: np.ndarray | None) -> np.ndarray:
+        """
+        -------------------------------------------------------
+        Process and clean up the given action.
+        -------------------------------------------------------
+        Parameters:
+            action (int): The action to be processed (0: headset, 1: left, 2: right).
+            change_position (np.ndarray): The change in x, y, z position for the action.
+        Returns:
+            new_position (np.ndarray): The cleaned-up position after applying the action.
+        -------------------------------------------------------
+        """
+        if change_position is None:
+            change_position = np.array([0, 0, 0])
+
+        # Clip position changes to the range [-0.1, 0.1]
+        change_position = np.clip(change_position, -0.1, 0.1)
+
+        # Get current positions of headset and controllers
+        info = self._get_info()
+        headset = info["headset"]
+        left_controller = info["left_controller"]
+        right_controller = info["right_controller"]
+
+        # Get controller and headset position
+        if action == Actions.headset.value:
+            new_position = np.array(headset['position']) + change_position
+        elif action == Actions.left.value:
+            new_position = np.array(left_controller['position']) + change_position
+        elif action == Actions.right.value:
+            new_position = np.array(right_controller['position']) + change_position
+        else:
+            raise ValueError("Invalid action")
+
+        # Clip new positions to valid ranges
+        new_position[0] = np.clip(new_position[0], -5, 5)  # x
+        new_position[1] = np.clip(new_position[1], 0, 3)  # y
+        new_position[2] = np.clip(new_position[2], -5, 5)  # z
+
+        # Ensure the distance between headset and controllers is not more than 3
+        if action in [Actions.left.value, Actions.right.value]:
+            controller_state = left_controller if action == Actions.left.value else right_controller
+            distance = np.linalg.norm(new_position - headset['position'])
+            if distance > 3:
+                direction = change_position / np.linalg.norm(change_position)
+                max_change = 3 - np.linalg.norm(
+                    np.array(controller_state["position"]) - np.array(headset["position"]))
+                new_position = direction * max_change
+
+        return new_position
+
     # TODO: Discuss and Implement reward function and termination
     def step(self, action, change_position=None, change_orientation=None, button: bool = False):
         """
@@ -148,22 +200,20 @@ class TowerOfHanoiEnv(gym.Env):
         """
         # Apply the action to the environment
         if change_orientation is None:
-            change_orientation = [0, 0, 0, 0]
-        if change_position is None:
-            change_position = [0, 0, 0]
-
-        # Clip position changes to the range [-0.1, 0.1]
-        change_position = np.clip(change_position, -0.1, 0.1)
+            change_orientation = np.array([0, 0, 0, 0])
 
         # Clip orientation changes to the range [-0.52, 0.52] radians
         change_orientation = np.clip(change_orientation, -0.52, 0.52)
 
+        # Process the action
+        change_position = self._process_action(action, change_position)
+
         if action == Actions.headset.value:
             headset_input(self.webdriver, change_position, change_orientation)
-        # elif action == Actions.left.value:
-        #     butt = "pressed" if button else "released"
-        #     controller_input(self.webdriver, "left", change_position,
-        #                      change_orientation, buttonIndex=1, buttonState=butt)
+        elif action == Actions.left.value:
+            butt = "pressed" if button else "released"
+            controller_input(self.webdriver, "left", change_position,
+                             change_orientation, buttonIndex=1, buttonState=butt)
         elif action == Actions.right.value:
             butt = "pressed" if button else "released"
             controller_input(self.webdriver, "right", change_position,
@@ -172,8 +222,10 @@ class TowerOfHanoiEnv(gym.Env):
             raise ValueError("Invalid action")
 
         # An episode is done iff the agent has reached the target
-        terminated = False  # TODO: change this
-        reward = 1 if terminated else 0  # TODO setup reward system
+        console_logs = get_console_logs(self.webdriver)
+        terminated = check_terminal(console_logs)
+        # 100 if the agent has reached the target, -1 if the agent has made an invalid move
+        reward = 100 if terminated else -1 if checkInvalidMove(console_logs) else 0
         observation = self._get_obs()
         info = self._get_info()
 
@@ -186,4 +238,3 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         """
         self.webdriver.quit()
-

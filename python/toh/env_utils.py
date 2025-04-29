@@ -7,12 +7,13 @@ Email:   eo223@nyu.edu
 __updated__ = "4/12/25"
 -------------------------------------------------------
 """
-
 # Imports
+import numpy as np
 from PIL import Image
 import io
 import time
 import os
+from typing import List
 from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -53,41 +54,54 @@ def setup_browser(render: bool = True) -> webdriver.Chrome:
     -------------------------------------------------------
     """
     chrome_options = Options()
-
-    # Use your Chrome profile to keep WebXR flags active
-    chrome_options.add_argument("user-data-dir=C:/Users/user/AppData/Local/Google/Chrome/User Data")
-
-    # Add VR Emulator extension
     chrome_options.add_extension(EMULATOR_PATH)
 
-    # Enable detailed logging
+    # Enable Logging
     chrome_options.set_capability('goog:loggingPrefs', {'browser': 'ALL', 'driver': 'ALL'})
     chrome_options.add_argument("--enable-logging")
 
-    # Developer mode preferences
+    # Essential developer mode preferences
     chrome_options.add_experimental_option("prefs", {
         "extensions.ui.developer_mode": True,
         "devtools.preferences.currentDockState": '"undocked"',
         "devtools.preferences.devToolsPosition": '"bottom"'
     })
 
-    # Enable WebXR features
+    # Required flags for WebXR
     chrome_options.add_argument("--enable-webxr")
-    chrome_options.add_argument("--enable-features=WebXR,WebXRHandInput,WebXRIncubations,WebXRProjectionLayers")
+    chrome_options.add_argument("--enable-features=WebXR")
     chrome_options.add_argument("--ignore-certificate-errors")
     chrome_options.add_argument("--allow-insecure-localhost")
     chrome_options.add_argument("--auto-open-devtools-for-tabs")
 
-    # Security for local server
+    # Security exceptions for local testing
     chrome_options.add_argument("--unsafely-treat-insecure-origin-as-secure=http://localhost:2024")
 
-    # Headless mode (if disabled, fully visual for VR)
+    # Headless mode not recommended for XR emulation
     if not render:
-        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--headless")
 
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
+
+def reset_tower_state(driver: webdriver.Chrome):
+    """
+    -------------------------------------------------------
+    Resets the state of the tower to its initial configuration by sending a reset message to the server.
+    -------------------------------------------------------
+    Parameters:
+        driver - Selenium WebDriver instance (webdriver.Chrome)
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
+
+    # Get tower state
+    tower_state = driver.execute_script(f"""
+        server.send('resetMessage', {{reset: true}});
+    """)
+    return tower_state
 
 
 def enter_xr_mode(driver: webdriver.Chrome):
@@ -100,11 +114,13 @@ def enter_xr_mode(driver: webdriver.Chrome):
          driver - Selenium WebDriver instance (webdriver.Chrome)
     -------------------------------------------------------
     """
+    if urlparse(driver.current_url).geturl() == URL:
+        print("Already on the correct URL, resetting...")
+        reset_tower_state(driver)
+        time.sleep(2)
+
     # Open the application URL/ Reload the page
-    if urlparse(driver.current_url).geturl() != URL:
-        driver.get(URL)
-    else:
-        driver.refresh()
+    driver.get(URL)
 
     # Click Tower of Hanoi mode button
     toh_button = WebDriverWait(driver, 10).until(
@@ -138,7 +154,6 @@ def get_screenshot(driver: webdriver.Chrome) -> Image:
     -------------------------------------------------------
     """
     assert driver is not None, "Driver is not initialized"
-
     assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
     # Take screenshot
     screenshot = driver.get_screenshot_as_png()
@@ -200,7 +215,7 @@ def get_controller_state(driver: webdriver.Chrome, hand: str) -> dict:
     return controller_state
 
 
-def headset_input(driver: webdriver.Chrome, delta_position: list[float], delta_angles: list[float]):
+def headset_input(driver: webdriver.Chrome, delta_position: list[float] | np.ndarray, delta_angles: list[float]):
     """
     -------------------------------------------------------
     Controls the headset position and angles. Affects the
@@ -232,7 +247,7 @@ def headset_input(driver: webdriver.Chrome, delta_position: list[float], delta_a
     """)
 
 
-def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[float],
+def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[float] | np.ndarray,
                      delta_angles: list[float], buttonIndex: int = 1, buttonState: str = 'released'):
     """
     -------------------------------------------------------
@@ -286,28 +301,92 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
     """)
 
 
-# from typing import Tuple
+def get_console_logs(driver: webdriver.Chrome) -> List[dict]:
+    """
+    -------------------------------------------------------
+    Returns the console logs from the browser.
+    -------------------------------------------------------
+    Parameters:
+       driver - Selenium WebDriver instance (webdriver.Chrome)
+    Returns:
+       console_logs - List of console log entries (List[dict])
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {webdriver.current_url}"
 
-# def get_disk_pose(webdriver, disk_id=0):
-#     # Ask JavaScript directly for the disk's 3D position
-#     pose = webdriver.execute_script(f"""
-#         if (window.discs && window.discs[{disk_id}]) {{
-#             return window.discs[{disk_id}].position;
-#         }} else {{
-#             return null;
-#         }}
-#     """)
-#     if pose is None:
-#         raise RuntimeError(f"Disk {disk_id} position not available.")
-#     return pose
+    # Read Logs
+    console_logs = driver.get_log('browser')
+    return console_logs
 
 
-# def get_peg_pose(driver, peg_index: int) -> Tuple[float, float, float]:
-#     js = f"""
-#     const tower = window._hanoi_towers[{peg_index}];
-#     const top = tower.stack.peek();
-#     const y    = top ? (top.position[1] + top.height) : 0.2;
-#     return [tower.pos, y, 0];
-#     """
-#     return tuple(driver.execute_script(js))
+def check_terminal(console_logs: List[dict]) -> bool:
+    """
+    -------------------------------------------------------
+    Check if the game is complete by reading the console logs.
+    -------------------------------------------------------
+    Parameters:
+        console_logs - List of console log entries (List[dict])
+    Returns:
+        True if the game is complete, False otherwise
+    -------------------------------------------------------
+    """
+    for entry in console_logs:
+        if 'Game Complete' in entry['message']:
+            print(f'Terminal Log: {entry["message"]}')
+            return True
+    return False
 
+
+def checkInvalidMove(console_logs: List[dict]) -> bool:
+    """
+    -------------------------------------------------------
+    Checks if an invalid move was made to put a disc on top of
+    a smaller disc.
+    -------------------------------------------------------
+    Parameters:
+        console_logs - List of console log entries (List[dict])
+    Returns:
+        True if an invalid move was made, False otherwise
+    -------------------------------------------------------
+    """
+    for entry in console_logs:
+        if 'Invalid move' in entry['message']:
+            print(f'Terminal Log: {entry["message"]}')
+            return True
+    return False
+
+
+def get_tower_state(driver: webdriver.Chrome) -> dict:
+    """
+    -------------------------------------------------------
+    Get the state of the tower.
+    -------------------------------------------------------
+    Parameters:
+        driver - Selenium WebDriver instance (webdriver.Chrome)
+    Returns:
+        tower_state - Dictionary containing tower state information
+            discs: An array of objects, each representing a disc in the game. Each disc has the following properties:
+                color: An array of 3 values representing the RGB color of the disc.
+                value: A numerical value representing the size or weight of the disc.
+                height: The height of the disc.
+                position: current position of the disc (x,y,z)
+                valid_position: the last valid position for the disc (x,y,z)
+                tower: The ID of the tower the disc is currently on.
+                did: A unique identifier for the disc.
+            selectedDisc: index in discs of the current disc being moved (Optional(int))
+            towers: An array of objects, each representing a tower in the game. Each tower has the following properties:
+                pos: The position of the tower in the game space.
+                tid: A unique identifier for the tower.
+            terminal: A boolean indicating whether the game is complete.
+    -------------------------------------------------------
+    """
+    assert driver is not None, "Driver is not initialized"
+    assert urlparse(driver.current_url).geturl() == URL, f"Driver is not on the correct URL {driver.current_url}"
+
+    # Get tower state
+    tower_state = driver.execute_script(f"""
+        let towerState = server.synchronize('towerState');
+        return towerState;
+    """)
+    return tower_state
