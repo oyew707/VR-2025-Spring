@@ -1,4 +1,8 @@
 selenium>=4.31.0
 pillow>=11.1.0
 webdriver-manager>=3.8.5
+torch>=2.5.0
+torchvision>=0.22.0
+tensorboard>=2.19.0
+cloudpickle>=3.1.1
 -e gymnasium_envs/

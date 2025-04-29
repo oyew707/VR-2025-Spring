@@ -27,9 +27,10 @@ cd ../../
 
 ## Usage
 Below is an example of how to use the Tower of Hanoi environment in a Python script. This example demonstrates how to reset the environment, take random actions, and print the results.
+
 ```python
 import numpy as np
-from gymnasium_envs.gymnasium_env.envs.towerOfHanoi import TowerOfHanoiEnv
+from gymnasium_envs.gymnasium_env.envs.towerOfHanoiVR import TowerOfHanoiEnv
 
 # Initialize the environment
 env = TowerOfHanoiEnv()
@@ -41,7 +42,7 @@ observation, info = env.reset()
 for _ in range(10):  # Perform 10 random steps
     # Sample a random action
     random_action = env.action_space.sample()
-    
+
     # Perform the action
     observation, reward, terminated, truncated, info = env.step(
         action=np.random.choice([0, 1, 2]),  # Randomly choose an action (headset, left, right)
@@ -49,10 +50,10 @@ for _ in range(10):  # Perform 10 random steps
         change_orientation=np.random.uniform(-np.pi, np.pi, size=4),  # Random orientation change
         button=np.random.choice([True, False])  # Random button press/release
     )
-    
+
     # Print the results
     print(f"Observation: {observation.shape}, Reward: {reward}, Terminated: {terminated}, Info: {info}")
-    
+
     if terminated:
         print("Episode terminated.")
         break

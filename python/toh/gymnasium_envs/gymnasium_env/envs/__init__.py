@@ -1,1 +1,2 @@
-from gymnasium_env.envs.towerOfHanoi import TowerOfHanoiEnv
+from gymnasium_env.envs.towerOfHanoiVR import TowerOfHanoiEnv as TowerOfHanoiEnvVR
+from gymnasium_env.envs.towerOfHanoi import HanoiEnv as TowerOfHanoiEnv

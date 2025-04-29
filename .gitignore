@@ -14,3 +14,4 @@ python/toh/.idea/vcs.xml
 python/toh/.idea/workspace.xml
 python/toh/.idea/inspectionProfiles/profiles_settings.xml
 python/toh/.idea/inspectionProfiles/Project_Default.xml
+python/toh/nn_models/state_extractor.pth

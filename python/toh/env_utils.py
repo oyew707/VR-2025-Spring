@@ -13,7 +13,7 @@ from PIL import Image
 import io
 import time
 import os
-from typing import List
+from typing import List, Union
 from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -215,7 +215,7 @@ def get_controller_state(driver: webdriver.Chrome, hand: str) -> dict:
     return controller_state
 
 
-def headset_input(driver: webdriver.Chrome, delta_position: list[float] | np.ndarray, delta_angles: list[float]):
+def headset_input(driver: webdriver.Chrome, delta_position: Union[list[float], np.ndarray], delta_angles: list[float]):
     """
     -------------------------------------------------------
     Controls the headset position and angles. Affects the
@@ -241,14 +241,14 @@ def headset_input(driver: webdriver.Chrome, delta_position: list[float] | np.nda
         xrDevice.position[1] = {delta_position[1]+current_position[1]};
         xrDevice.position[2] = {delta_position[2]+current_position[2]};
         xrDevice.quaternion[0] = {delta_angles[0]+current_angles[0]};
-        xrDevice.quaternion[1] = {delta_angles[0]+current_angles[1]};
-        xrDevice.quaternion[2] = {delta_angles[0]+current_angles[2]};
-        xrDevice.quaternion[3] = {delta_angles[0]+current_angles[3]};
+        xrDevice.quaternion[1] = {delta_angles[1]+current_angles[1]};
+        xrDevice.quaternion[2] = {delta_angles[2]+current_angles[2]};
+        xrDevice.quaternion[3] = {delta_angles[3]+current_angles[3]};
     """)
 
 
-def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[float] | np.ndarray,
-                     delta_angles: list[float], buttonIndex: int = 1, buttonState: str = 'released'):
+def controller_input(driver: webdriver.Chrome, hand: str, delta_position: Union[list[float], np.ndarray],
+                     delta_angles: Union[list[float], np.ndarray], buttonIndex: int = 1, buttonState: str = 'released'):
     """
     -------------------------------------------------------
     Controller input function to simulate controller actions.
@@ -290,9 +290,9 @@ def controller_input(driver: webdriver.Chrome, hand: str, delta_position: list[f
         gamepad.pose.position[1] = {delta_position[1] + current_position[1]};
         gamepad.pose.position[2] = {delta_position[2] + current_position[2]};
         gamepad.pose.orientation[0] = {delta_angles[0] + current_angles[0]};
-        gamepad.pose.orientation[1] = {delta_angles[0] + current_angles[1]};
-        gamepad.pose.orientation[2] = {delta_angles[0] + current_angles[2]};
-        gamepad.pose.orientation[3] = {delta_angles[0] + current_angles[3]};
+        gamepad.pose.orientation[1] = {delta_angles[1] + current_angles[1]};
+        gamepad.pose.orientation[2] = {delta_angles[2] + current_angles[2]};
+        gamepad.pose.orientation[3] = {delta_angles[3] + current_angles[3]};
         
         // Set Button State
         gamepad.buttons[{buttonIndex}].pressed = {pressed};
