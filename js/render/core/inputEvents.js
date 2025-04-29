@@ -37,6 +37,18 @@ export function InputEvents() {
 
    let prevIsHoldingBothAlts = false;
 
+   let P, y, pos = {}, inverseWorldCoords;
+
+   let setWorldCoords = m => {
+      worldCoords = m;
+      global.gltfRoot.matrix = worldCoords;
+      inverseWorldCoords = cg.mInverse(worldCoords);
+      if (window.clay) {
+         clay.root().setMatrix(worldCoords);
+         clay.inverseRootMatrix = inverseWorldCoords;
+      }
+   }
+
    this.update = () => {
       let press = hand => {
          let currentTime = now();
@@ -64,9 +76,7 @@ export function InputEvents() {
 
       pos = {};
       for (let hand in handInfo)
-         pos[hand] = window.handtracking ? cg.mix(clay.handsWidget.getMatrix(hand,0,4).slice(12,15),
-                                                  clay.handsWidget.getMatrix(hand,1,4).slice(12,15),.5)
-                                         : clay.controllerOrigin(hand);
+         pos[hand] = clientState.finger(clientID, hand, 1);
 
       if(window.handtracking != prevIsHandtracking){
          handInfo.left.altPressTime = -1;
@@ -114,17 +124,14 @@ export function InputEvents() {
             for (let i = 0 ; i < 3 ; i++)
                worldCoords[12+i] += Math.max(-0.05, Math.min(T[i] - P[i], 0.05));
          P = T.slice();
-         clay.root().setMatrix(worldCoords);
-         global.gltfRoot.matrix = worldCoords;
-         inverseWorldCoords = cg.mInverse(worldCoords);
-         clay.inverseRootMatrix = inverseWorldCoords;
+	 setWorldCoords(worldCoords);
       }
       else
          P = undefined;
 
       if(isAltL && isAltR != prevIsHoldingBothAlts){
-         let L = pos.left;
-         let R = pos.right;
+         let L = cg.mTransform(worldCoords, pos.left );
+         let R = cg.mTransform(worldCoords, pos.right);
          let T = cg.mix(L, R, .5);
          y = T[1];
       }
@@ -135,8 +142,8 @@ export function InputEvents() {
 
       if (isAltL && isAltR && !window.handtracking) {
          altPressed = true;
-         let L = pos.left;
-         let R = pos.right;
+         let L = cg.mTransform(worldCoords, pos.left );
+         let R = cg.mTransform(worldCoords, pos.right);
          let X = cg.subtract(R, L);
          if (isFlipped)
             X = cg.scale(X, -1);
@@ -148,10 +155,7 @@ export function InputEvents() {
          if (y !== undefined)
             worldCoords[13] += Math.max(-0.05, Math.min(T[1] - y, 0.05));
          y = T[1];
-         clay.root().setMatrix(worldCoords);
-         global.gltfRoot.matrix = worldCoords;
-         inverseWorldCoords = cg.mInverse(worldCoords);
-         clay.inverseRootMatrix = inverseWorldCoords;
+	 setWorldCoords(worldCoords);
       }
       else
          y = undefined;
@@ -167,46 +171,38 @@ export function InputEvents() {
             sync.syncBound();
          }
 
-         clay.root().setMatrix(worldCoords);
-         global.gltfRoot.matrix = worldCoords;
-         inverseWorldCoords = cg.mInverse(worldCoords);
-         clay.inverseRootMatrix = inverseWorldCoords;
+	 setWorldCoords(worldCoords);
       }
 
-      // CHECK FOR SPATIAL SYNC FROM ANOTHER CLIENT.
+      // SPATIAL SYNCHRONIZATION FROM ANOTHER CLIENT
 
-      if ( clientState.button(clientID, 'left' , 4) &&
-           clientState.button(clientID, 'right', 4) )
+      // When I press my X and A buttons while another client presses their Y and B buttons:
+      // 1) Create two coordinate systems from my two controllers and their two controllers.
+      // 2) Use that info to transform my controller coords to face their controller coords.
+
+      let matrixFromLR = (L,R) => {
+	 let T = cg.mix(L,R,.5);
+	 let X = cg.normalize([ R[0]-L[0], 0, R[2]-L[2] ]);
+	 let Z = cg.cross(X,[0,1,0]);
+	 return [ X[0],0,X[2],0, 0,1,0,0, Z[0],0,Z[2],0, T[0],T[1],T[2],1 ];
+      }
+      let button = (id,hand,b) => clientState.button(id,hand,b);
+      let finger = (id,hand  ) => cg.mTransform(clientState.coords(id),
+                                                clientState.finger(id,hand,1));
+
+      if (button(clientID,'left',4) && button(clientID,'right',4))
          for (let n = 0 ; n < clients.length ; n++) {
-	    let id = clients[n];
-	    if (id != clientID && clientState.button(id, 'left' , 5) &&
-                                  clientState.button(id, 'right', 5)) {
-
-               let L0 = clientState.finger(clientID, 'left' , 1);
-               let R0 = clientState.finger(clientID, 'right', 1);
-               let L1 = clientState.finger(      id, 'left' , 1);
-               let R1 = clientState.finger(      id, 'right', 1);
-
-	       let T0 = cg.mix(L0,R0,.5);
-	       let T1 = cg.mix(R1,L1,.5);
-	       let X0 = cg.normalize([ R0[0]-L0[0] , 0 , R0[2]-L0[2] ]);
-	       let X1 = cg.normalize([ L1[0]-R1[0] , 0 , L1[2]-R1[2] ]);
-	       let Z0 = cg.cross(X0,[0,1,0]);
-	       let Z1 = cg.cross(X1,[0,1,0]);
-
-	       let M0 = [X0[0],0,X0[2],0, 0,1,0,0, Z0[0],0,Z0[2],0, T0[0],T0[1],T0[2],1];
-	       let M1 = [X1[0],0,X1[2],0, 0,1,0,0, Z1[0],0,Z1[2],0, T1[0],T1[1],T1[2],1];
-	       let DM = cg.mMultiply(M1, cg.mInverse(M0));
-
-	       worldCoords = cg.mMultiply(DM, worldCoords);
+	    let senderID = clients[n];
+	    if (button(senderID,'left',5) && button(senderID,'right',5)) {
+	       let A = matrixFromLR(finger(clientID, 'left' ), finger(clientID, 'right'));
+               let B = matrixFromLR(finger(senderID, 'right'), finger(senderID, 'left' ));
+	       setWorldCoords(cg.mMultiply(A, cg.mInverse(B)));
             }
-	 }
+         }
    }
 
-   let P, y, pos = {};
-   global.gltfRoot.matrix = worldCoords;
-   let inverseWorldCoords = cg.mInverse(worldCoords);
-   this.pos = hand => cg.mTransform(inverseWorldCoords, pos[hand]);
+   setWorldCoords(worldCoords);
+   this.pos = hand => pos[hand];
 }
 
 window.worldCoords = cg.mIdentity();

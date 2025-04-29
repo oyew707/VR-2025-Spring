@@ -221,12 +221,17 @@ export let G3 = function(model, callback) {
    this.pinch  = (hand,i) => clientState.pinch (clientID, hand, i);
    this.view   = ()       => view;
 
-   const co = '#0080f0,#ffffff,#ff3000,#ffff00,#00e000,#0000ff,#ff0000'.split(',');
    const fw = [.021,.019,.018,.017,.015];
    const faceX = [-.04, .04, .09,.1 ,.05,-.05,-.1 ,-.09];
    const faceY = [-.11,-.11,-.05,.08,.13, .13, .08,-.05];
 
+   let co = [];
+
    this.update = () => {
+      if (! co.length)
+         for (let i = 0 ; i < 7 ; i++)
+	    co.push(cg.rgbToHex(clientState.color(i)));
+
       for (view = 0 ; view <= 1 ; view++) {
          projected.update(view);
          screen[view].setMatrix(projected.getMatrix());
@@ -244,7 +249,7 @@ export let G3 = function(model, callback) {
 	       let face = [];
 	       for (let i = 0 ; i < faceX.length ; i++)
 	          face.push(cg.mTransform(m, [faceX[i],faceY[i],0]));
-               this.lineWidth(.01).color('#0080f0');
+               this.lineWidth(.01).color(co[0]);
 	       for (let i = 0 ; i < face.length ; i++)
                   this.line(face[i], face[(i+1) % face.length]);
             }
