@@ -2,20 +2,29 @@
 
 // MISCELLANEOUS METHODS
 
+   // Bezier interpolation in one dimension
+
+   export let bezier = (t,a,b,c,d) => (1-t)*(1-t)*(1-t)*a + 3*(1-t)*(1-t)*t*b + 3*(1-t)*t*t*c + t*t*t*d;
+
+   // Clamp a numeric value to a range.
+
+   export let clamp = (t, lo=0, hi=1) => Math.max(lo, Math.min(hi, t));
+
    // If a value is undefined, give it a default value.
 
    export let def = (v, d) => v !== undefined ? v : d !== undefined ? d : 0;
+
+   // Hermite interpolation in one dimension
+
+   export let hermite = (t, a, b, da, db) => a * ( 2 * t*t*t - 3 * t*t + 1) +
+                                             b * (-2 * t*t*t + 3 * t*t    ) +
+                                            da * (     t*t*t - 2 * t*t + t) +
+                                            db * (     t*t*t -     t*t    ) ;
 
    // Provide a unique random integer ID.
 
    export let uniqueID = () => 1000 * Math.floor(Math.random() * 1000000) + (Date.now() % 1000);
 
-   // Hermite interpolation in one dimension
-
-   export let hermite = (t, a, b, da, db) => a * ( 2 * t*t*t - 3 * t*t     + 1) +
-                                             b * (-2 * t*t*t + 3 * t*t        ) +
-                                            da * (     t*t*t - 2 * t*t + t    ) +
-                                            db * (     t*t*t -     t*t        ) ;
 
    // Two link inverse kinematics
 
@@ -140,6 +149,14 @@
                                    h2f(hex.substring(3,5)),
 				   h2f(hex.substring(5,7)),
                                    hex.length > 8 ? h2f(hex.substring(7,9)) : 1 ];
+   let f2h = f => {
+      const c = '0123456789abcdef';
+      f = clamp(f,0,.999);
+      let hi = 16 * f >> 0;
+      let lo = 16 * (16 * f - hi) >> 0;
+      return c[hi] + c[lo];
+   }
+   export let rgbToHex = rgb => '#' + f2h(rgb[0]) + f2h(rgb[1]) + f2h(rgb[2]);
 
 // VECTOR METHODS
 
