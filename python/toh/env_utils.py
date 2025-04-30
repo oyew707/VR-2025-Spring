@@ -82,6 +82,7 @@ def setup_browser(render: bool = True) -> webdriver.Chrome:
         chrome_options.add_argument("--headless")
 
     driver = webdriver.Chrome(options=chrome_options)
+    time.sleep(2)
     return driver
 
 
@@ -104,7 +105,7 @@ def reset_tower_state(driver: webdriver.Chrome):
     return tower_state
 
 
-def enter_xr_mode(driver: webdriver.Chrome):
+def enter_xr_mode(driver: webdriver.Chrome, towerOfHanoi='towerOfHanoi'):
     """
     -------------------------------------------------------
     Launch the application and enter XR mode. Reloads the page
@@ -112,6 +113,7 @@ def enter_xr_mode(driver: webdriver.Chrome):
     -------------------------------------------------------
     Parameters:
          driver - Selenium WebDriver instance (webdriver.Chrome)
+         towerOfHanoi - scene button to click to enter (str)
     -------------------------------------------------------
     """
     if urlparse(driver.current_url).geturl() == URL:
@@ -124,7 +126,7 @@ def enter_xr_mode(driver: webdriver.Chrome):
 
     # Click Tower of Hanoi mode button
     toh_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[contains(@onclick, 'towerOfHanoi')]"))
+        EC.element_to_be_clickable((By.XPATH, f"//button[contains(@onclick, '{towerOfHanoi}')]"))
     )
     driver.execute_script("arguments[0].click();", toh_button)
 

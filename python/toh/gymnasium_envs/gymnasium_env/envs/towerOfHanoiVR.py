@@ -17,6 +17,8 @@ from env_utils import *
 
 
 # Constants
+STARTING_HEADSET = [0, 1.6, -0.5]
+CROPPED_BOX = (775, 472, 1630, 858)  # (left, upper, right, lower)
 
 class Actions(Enum):
     headset = 0
@@ -30,20 +32,20 @@ class TowerOfHanoiEnv(gym.Env):
     Virtual Reality Tower of Hanoi Environment
     -------------------------------------------------------
     Parameters:
-        height (int): Height of the observation space.
-        width (int): Width of the observation space.
+        size (int): Height of the observation space.
         render (bool): Whether to render the environment.
     -------------------------------------------------------
     """
 
-    def __init__(self, height=512, width=512, render=True):
+    def __init__(self, size=224, render=True):
         super(TowerOfHanoiEnv, self).__init__()
 
-        self.height, self.width = height, width
+        # image will be rescaled to (size, size * width/height ) based on the cropped image
+        self.height, self.width = size, int(size*((CROPPED_BOX[2] - CROPPED_BOX[0])/(CROPPED_BOX[3] - CROPPED_BOX[1])))
         self.observation_space = spaces.Box(
             low=0,
             high=255,
-            shape=(height, width, 3),  # (H, W, RGB channels)
+            shape=(self.height, self.width, 3),  # (H, W, RGB channels)
             dtype=np.uint8
         )
 
@@ -64,10 +66,8 @@ class TowerOfHanoiEnv(gym.Env):
 
         # Set up the browser
         self.webdriver = setup_browser(render)
-        # Gets the headset to position [0, 1.6, -0.5]
-        headset_input(self.webdriver, [0, -0.1, -0.5], [0, 0, 0, 0])
 
-    def _get_obs(self) -> np.ndarray:
+    def _get_obs(self) -> Image.Image:
         """
         -------------------------------------------------------
         Get the current observation of the environment.
@@ -77,8 +77,8 @@ class TowerOfHanoiEnv(gym.Env):
         -------------------------------------------------------
         """
         img = get_screenshot(self.webdriver)
+        img = img.crop(CROPPED_BOX)
         img = img.resize((self.height, self.width))
-        img = np.array(img.convert("RGB"))
         return img
 
     def _get_info(self) -> dict:
@@ -113,7 +113,7 @@ class TowerOfHanoiEnv(gym.Env):
             seed (int): Random seed for reproducibility.
             options (dict): Additional options for resetting the environment.
         Returns:
-            observation (dict): Initial observation of the environment.
+            observation (Image.Image): Image observation of the environment.
             info (dict): Additional information about the environment.
         -------------------------------------------------------
         """
@@ -124,10 +124,18 @@ class TowerOfHanoiEnv(gym.Env):
         enter_xr_mode(self.webdriver)
 
         # Get the initial state of the environment
-        observation = self._get_obs()
         info = self._get_info()
+        # Move the headset to the starting position
+        headset_delta = np.subtract(STARTING_HEADSET, info['headset']['position'])
+        headset_input(self.webdriver, headset_delta, [0, 0, 0, 0])
+        # Move the left controller to the starting position (i.e. smallest disc)
+        disc_pos = np.array(info['tower']['discs']['3']['position'])
+        disc_pos = np.add((disc_pos * 0.1), np.array([0, 1.5, -0.95]))
+        left_controller_delta = np.subtract(disc_pos, info['left_controller']['position'])
+        controller_input(self.webdriver, "left", left_controller_delta,
+                         [0, 0, 0, 0], buttonIndex=1, buttonState="released")
 
-        return observation, info
+        return self._get_obs(), self._get_info()
 
     def _process_action(self, action: int, change_position: Optional[np.ndarray] = None) -> np.ndarray:
         """
@@ -193,7 +201,7 @@ class TowerOfHanoiEnv(gym.Env):
            change_orientation (Iterable): The change in orientation (quaternion) for the action.
            button (bool): Whether the button is pressed or released.
         Returns:
-            observation (np.ndarray): The new observation of the environment.
+            observation (Image.IMage): The new observation of the environment.
             reward (float): The reward received after taking the action.
             terminated (bool): Whether the episode has ended.
             truncated (bool): Whether the episode has been truncated.
