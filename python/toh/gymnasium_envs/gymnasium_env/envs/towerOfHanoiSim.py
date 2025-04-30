@@ -11,10 +11,11 @@ __updated__ = "4/29/25"
 # Imports
 import json
 import time
-from typing import Dict, TypedDict, NotRequired
+from typing import Dict, TypedDict, NotRequired, Optional
 import numpy as np
 from gymnasium_env.envs.towerOfHanoi import get_optimal_states
 from env_utils import *
+from gymnasium_env.envs.towerOfHanoiVR import Actions
 
 # Constants
 STARTING_HEADSET = [0, 1.6, -0.5]
@@ -145,6 +146,44 @@ class TowerOfHanoiEnvSim():
             """)
         return globalDiscInfo
 
+    def _process_action(self, action: int, info: Dict,
+                        change_position: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        -------------------------------------------------------
+        Process and clean up the given action.
+        -------------------------------------------------------
+        Parameters:
+            action (int): The action to be processed (0: headset, 1: left, 2: right).
+            info (dict): The current state of the environment.
+            change_position (np.ndarray): The change in x, y, z position for the action.
+        Returns:
+            new_position (np.ndarray): The cleaned-up position after applying the action.
+        -------------------------------------------------------
+        """
+        if change_position is None:
+            change_position = np.array([0, 0, 0])
+
+        # Clip position changes to the range [-0.1, 0.1]
+        change_position = np.clip(change_position, -0.1, 0.1)
+
+        # Get current positions of headset and controllers
+        controller = info['left_controller' if self.device == 'left' else 'right_controller']
+
+        # Get controller and headset position
+        if action == Actions.left.value:
+            new_position = np.array(controller['position']) + change_position
+        elif action == Actions.right.value:
+            new_position = np.array(controller['position']) + change_position
+        else:
+            raise ValueError("Invalid action")
+
+        # Clip new positions to valid ranges
+        new_position[0] = np.clip(new_position[0], -1.5, 1.5)  # x
+        new_position[1] = np.clip(new_position[1], 1., 1.5)  # y
+        new_position[2] = np.clip(new_position[2], -1, -0.5)  # z
+
+        return new_position
+
     def takeAction(self, action, st: StateType, pressed):
         """
         -------------------------------------------------------
@@ -172,6 +211,7 @@ class TowerOfHanoiEnvSim():
         p1 = info['left_controller' if self.device == 'left' else 'right_controller']['position']
         p2 = st['info']['left_controller' if self.device == 'left' else 'right_controller']['position']
         delta = np.subtract(p2, p1)
+        print(f"Moving the controller {p1} to the prev state position {p2}")
         controller_input(self.webdriver, self.device, delta, [0, 0, 0, 0],
                          buttonState='pressed' if pressed else 'released')
 
@@ -181,20 +221,18 @@ class TowerOfHanoiEnvSim():
         pressedButton = action[3]
         print(f"Action: {action=}, {change_position=}, {change_angle=}, {pressedButton=}")
 
-        # Validate the action
-        # self._process_action(action) See Actual env
-
         # Check if the controller is close to any of the discs
         hit = self._check_hit()
         # If the controller is close to a disc, move it
-        if pressedButton and hit is not None:
-            curr_contr_pos = info['left_controller' if self.device == 'left' else 'right_controller']['position']
-            curr_contr_pos = np.add(curr_contr_pos, change_position)
+        if pressed and hit is not None:
+            print("Should Move the Disc")
+            curr_contr_pos = self._process_action(action[0], info, change_position)
             info['left_controller' if self.device == 'left' else 'right_controller']['position'] = curr_contr_pos
             curr_disc_pos = 10 * np.subtract(curr_contr_pos, np.array([0, 1.5, -0.5]))
             info['tower']['discs'][str(hit)]['position'] = curr_disc_pos
             # set the new position of the disc
-            self.set_state(info)
+            self.set_state(info['info']['tower']['discs'])
+
 
         # Set the new position of the controller
         controller_input(self.webdriver, self.device, change_position, change_angle,

@@ -154,6 +154,7 @@ class ActorCritic(nn.Module):
         cont_dist = MultivariateNormal(cont_mean, torch.diag(self.action_var).unsqueeze(0))
         binary_dist = Bernoulli(probs=binary_probs)
         cont_action = cont_dist.sample()
+        cont_action = torch.clamp(cont_action, -self.pred_boundary, self.pred_boundary)
         binary_action = binary_dist.sample()
         # concatenate the actions, log probs and state value
         action = torch.cat([cont_action, binary_action], dim=-1)
@@ -184,6 +185,7 @@ class ActorCritic(nn.Module):
         binary_dist = Bernoulli(probs=binary_probs)
 
         cont_action = cont_dist.sample((num_samples,))
+        cont_action = torch.clamp(cont_action, -self.pred_boundary, self.pred_boundary)
         binary_action = binary_dist.sample((num_samples,))
 
         # concatenate the actions, log probs and state value
@@ -332,6 +334,7 @@ class PPO:
                     "observation": observation,
                     "isterminal": False,
                     "info": stateInfo,
+                    "pressedButton": bool(prev_action[3].item()),
                 }
                 sn = StateNode(st)
                 sn.action = prev_action

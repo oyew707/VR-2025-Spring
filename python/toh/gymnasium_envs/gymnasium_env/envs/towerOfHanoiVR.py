@@ -128,11 +128,11 @@ class TowerOfHanoiEnv(gym.Env):
         # Move the headset to the starting position
         headset_delta = np.subtract(STARTING_HEADSET, info['headset']['position'])
         headset_input(self.webdriver, headset_delta, [0, 0, 0, 0])
-        # Move the left controller to the starting position (i.e. smallest disc)
+        # Move the right controller to the starting position (i.e. smallest disc)
         disc_pos = np.array(info['tower']['discs']['3']['position'])
         disc_pos = np.add((disc_pos * 0.1), np.array([0, 1.5, -0.95]))
-        left_controller_delta = np.subtract(disc_pos, info['left_controller']['position'])
-        controller_input(self.webdriver, "left", left_controller_delta,
+        right_controller_delta = np.subtract(disc_pos, info['right_controller']['position'])
+        controller_input(self.webdriver, "right", right_controller_delta,
                          [0, 0, 0, 0], buttonIndex=1, buttonState="released")
 
         return self._get_obs(), self._get_info()

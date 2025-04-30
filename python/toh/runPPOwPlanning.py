@@ -25,10 +25,10 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 # Env hyperparameters
-action_std = 0.6                    # starting std for action distribution (Multivariate Normal)
-action_std_decay_rate = 0.05        # linearly decay action_std (action_std = action_std - action_std_decay_rate)
+action_std = 0.2                    # starting std for action distribution (Multivariate Normal)
+action_std_decay_rate = 0.01        # linearly decay action_std (action_std = action_std - action_std_decay_rate)
 min_action_std = 0.1                # minimum action_std (stop decay after action_std <= min_action_std)
-action_std_decay_freq = int(2.5e2)  # action_std decay frequency (in num timesteps)
+action_std_decay_freq = int(2.5e1)  # action_std decay frequency (in num timesteps)
 max_episodes = 10                   # max training episodes
 max_ep_len = 6000                   # max timesteps in one episode
 
@@ -46,6 +46,7 @@ env = TowerOfHanoiEnvVR()
 
 # Reset the environment
 observation, info = env.reset()
+print(f"{info=}")
 
 # Initialize the PPO agent
 ppo_agent = PPO(
@@ -74,7 +75,7 @@ for ep in range(max_episodes):
 
     for t in range(max_ep_len):
         # Select action
-        action = ppo_agent.select_action(observation, info, prev_action)
+        action = ppo_agent.select_action(observation, env._get_info(), prev_action)
 
         typea = 2  # Actions for right controller
         pos_change = action[:3]
