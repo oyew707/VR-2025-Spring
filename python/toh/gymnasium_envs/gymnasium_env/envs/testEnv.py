@@ -1,5 +1,14 @@
-# Updated version: smarter logging, reward tracking, and proximity metrics
-
+"""
+-------------------------------------------------------
+Test Environment for Tower of Hanoi in VR
+Includes logging, reward tracking, and proximity metrics
+-------------------------------------------------------
+Author:  Alon Florentin
+Email:   abf386@nyu.edu
+__updated__ = 4/30/25
+-------------------------------------------------------
+"""
+# Imports
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -11,6 +20,7 @@ from env_utils import (
     get_controller_state, get_tower_state
 )
 
+# Constants
 MAX_DELTA_POS = 0.05
 VIEW_MIN = np.array([-0.6, 0.9, -1.1], dtype=np.float32)
 VIEW_MAX = np.array([ 0.6, 1.6, -0.35], dtype=np.float32)
@@ -24,7 +34,18 @@ TOWER_X, TOWER_Y, TOWER_Z = 0.0, 1.064, -1.0
 PLACE_THRESH = 0.18
 MAX_STEPS = 600
 
+
 class VRHanoiEnv(gym.Env):
+    """
+    --------------------------------------------------------
+    Environment for Tower of Hanoi in VR with rewards
+    ---------------------------------------------------------
+    Parameters:
+        render (bool): Whether to render the environment
+        height (int): Height of the observation space
+        width (int): Width of the observation space
+    ---------------------------------------------------------
+    """
     def __init__(self, render=True, height=512, width=512):
         super().__init__()
         self.height, self.width = height, width

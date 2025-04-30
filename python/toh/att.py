@@ -1,6 +1,15 @@
-# train_vr_hanoi.py
-# Creates and trains a brand-new PPO model on the above environment
+"""
+-------------------------------------------------------
+Runs a PPO agent with engineered rewards
+Creates and trains a brand-new PPO model on the above environment
+-------------------------------------------------------
+Author:  Alon Florentin
+Email:   abf386@nyu.edu
+__updated__ = 4/30/25
+-------------------------------------------------------
+"""
 
+# Imports
 import os
 import numpy as np
 import gymnasium as gym
@@ -9,8 +18,9 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
-
 from gymnasium_envs.gymnasium_env.envs.testEnv import VRHanoiEnv  # Import your minimal env
+
+# Constants
 
 # ─── Callback to periodically restart Chrome ─────────────────────────────────
 class RestartChromeCallback(BaseCallback):
