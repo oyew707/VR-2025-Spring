@@ -3,6 +3,26 @@
 
 This repository contains a custom Gymnasium environment for simulating a Virtual Reality (VR) version of the Tower of Hanoi puzzle. The environment is designed to work with the Gymnasium framework and provides a flexible interface for interacting with the VR environment.
 
+---
+
+## Quick Overview
+
+- **Environments**
+  - `gymnasium_envs/gymnasium_env/envs/towerOfHanoi.py`: Classic, tabular Tower of Hanoi environment (discrete state/action).
+  - `gymnasium_envs/gymnasium_env/envs/towerOfHanoiVR.py`: VR-based environment with image observations and continuous actions.
+  - `gymnasium_envs/gymnasium_env/envs/towerOfHanoiSim.py`: Simulator for planning and state manipulation.
+
+- **RL Algorithms**
+  - `runDQN.py`: Trains a DQN agent on the classic environment.
+  - `runPPO.py`: Trains a PPO agent on the VR environment using image observations.
+  - `runPPOwPlanning.py`: Trains a PPO agent with integrated planning (MCTS) and rule guidance.
+
+- **Planning and Models**
+  - `planner.py`: Implements Monte Carlo Tree Search (MCTS) for planning, using a DQN agent and a CNN state extractor.
+  - `ppo.py`: Custom PPO implementation supporting hybrid action spaces and MCTS-based action selection.
+
+---
+
 ## Features
 
 - **Observation Space**: The environment captures screenshots of the VR environment as observations.
@@ -23,6 +43,12 @@ pip install -r requirements.txt
 ```bash
 cd ../../
 ./startserver
+```
+- Train Agents
+```
+python runDQN.py #DQN (on array representation)
+python runPPO.py #(PPO (VR))
+python runPPOwPlanning.py #(PPO + Planning)
 ```
 
 ## Usage
@@ -61,3 +87,8 @@ for _ in range(10):  # Perform 10 random steps
 # Close the environment
 env.close()
 ```
+
+## Notes
+- The VR environment requires a running VR server and browser integration.
+- RL code is modular and can be adapted for specific implementation goals.
+- For more details on the VR setup, see the main project README.
